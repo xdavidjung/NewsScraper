@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import edu.washington.cs.knowitall.extractor.conf.ReVerbConfFunction;
+import edu.washington.cs.knowitall.extractor.conf.ReVerbOpenNlpConfFunction;
 import edu.washington.cs.knowitall.nlp.extraction.ChunkedBinaryExtraction;
 
 public class ExtractedNewsData extends NewsData{
@@ -34,7 +34,13 @@ public class ExtractedNewsData extends NewsData{
         sb.append("\"extractions\":[");
         Iterator<Entry<String, ChunkedBinaryExtraction>> it = extractions.entrySet().iterator();
         boolean empty = true;
-        ReVerbConfFunction confFunc = new ReVerbConfFunction();
+        ReVerbOpenNlpConfFunction confFunc = null;
+        try {
+        	confFunc = new ReVerbOpenNlpConfFunction();
+        } catch(Exception e) {
+        	e.printStackTrace();
+        	System.exit(0);
+        }
         while(it.hasNext()){
             empty = false;
             Map.Entry<String, ChunkedBinaryExtraction> pairs = (Map.Entry<String, ChunkedBinaryExtraction>)it.next();
