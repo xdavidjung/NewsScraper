@@ -31,7 +31,7 @@ import org.json.JSONObject;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-public class ExtractedDataFormater {
+public class ExtractedDataFormatter {
     
     private final int MAX_OUTPUT_DATA = 500;
     private final String ENCODE = "UTF-8";
@@ -61,7 +61,7 @@ public class ExtractedDataFormater {
      * @param calendar
      * @param configFileLocation
      */
-    public ExtractedDataFormater(Calendar calendar, String configFileLocation){
+    public ExtractedDataFormatter(Calendar calendar, String configFileLocation){
         
         startDate = null;
         endDate = null;
