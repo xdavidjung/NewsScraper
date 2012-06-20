@@ -11,16 +11,22 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 
-
 /**
- * This class is used as scrape new from internet
- * @author Pingyang He
- *
+ * This class is used to scrape news from the internet from the command line.
+ * 
+ * @author Pingyang He, David H Jung
+ * 
  */
 public class NewsScraperMain {
-    
+
+    /**
+     * The name of the local file that stores Config information.
+     */
     private static final String YAHOO_CONFIG_FILE = "YahooRssConfig";
-    
+
+    /**
+     * Options that this class recognizes.
+     */
     private static final String SCRAPE_DATA_ONLY = "s";
     private static final String SCRAPE_DATA_AND_PROCESS_DATA = "sp";
     private static final String PROCESS_RSS_WITH_GIVEN_DIR = "p";
@@ -33,113 +39,128 @@ public class NewsScraperMain {
     private static final String FORMAT_CONFIDENCE_THRESHOLD = "fct";
     private static final String FORMAT_CATEGORY_FILTER = "fc";
     private static final String HELP = "h";
-    
+
     private static Calendar calendar;
     private static Options options;
-    
-    public static void main( String[] args ) throws IOException{
-        initiateVars();
-    
+
+    public static void main(String[] args) throws IOException {
+        initializeVars();
+
         CommandLine cmd = getCommands(args, options);
 
         validateOptionNumbers(cmd);
-        
+
         fetchNews(cmd);
 
         extractNews(cmd);
 
         formatData(cmd);
-       
+
         help(cmd);
 
     }
-    
-    /*
-     * print the help option
+
+    /**
+     * Outputs a help message.
+     * 
+     * @modifies nothing
      */
     private static void help(CommandLine cmd) {
-        if(cmd.hasOption(HELP)){
+        if (cmd.hasOption(HELP)) {
             printUsage();
         }
     }
 
-    /*
-     * initiate variables for this object
+    /**
+     * Initialize variables for this object.
      */
-    private static void initiateVars() {
+    private static void initializeVars() {
         calendar = Calendar.getInstance();
         options = new Options();
     }
 
-    /*
-     * format the stored data
+    /**
+     * Format the stored data - called when the user uses the option -fmt.
      */
     private static void formatData(CommandLine cmd) {
-        if(cmd.hasOption(FORMAT_OPT)){
-            
+        if (cmd.hasOption(FORMAT_OPT)) {
+
             String[] dir = null;
             String[] timeInterval = null;
+            // -1 indicates none
             double confidenceThreshold = -1;
             boolean formatToday = false;
             String category = null;
-            
-            if(cmd.hasOption(FORMAT_DIR)){
+
+            // check for additional options used with fmt.
+            // -fd
+            if (cmd.hasOption(FORMAT_DIR)) {
                 dir = cmd.getOptionValues(FORMAT_DIR);
-                if(dir.length != 2 || dir[0] == null || dir[1] == null){
+                if (dir.length != 2 || dir[0] == null || dir[1] == null) {
                     printUsage();
                 }
             }
-           
-            if(cmd.hasOption(FORMAT_TODAY)){
-                if(cmd.hasOption(FORMAT_TIME_FILTER)) printUsage();
+
+            // -ftoday
+            if (cmd.hasOption(FORMAT_TODAY)) {
+                if (cmd.hasOption(FORMAT_TIME_FILTER))
+                    printUsage();
                 formatToday = true;
-            
-            }else if(cmd.hasOption(FORMAT_TIME_FILTER)){
+
+            // -ft
+            } else if (cmd.hasOption(FORMAT_TIME_FILTER)) {
                 timeInterval = cmd.getOptionValues(FORMAT_TIME_FILTER);
-                if(timeInterval.length != 2 || 
-                    timeInterval[0] == null || timeInterval[1] == null){
+                if (timeInterval.length != 2 || timeInterval[0] == null
+                        || timeInterval[1] == null) {
                     printUsage();
                 }
             }
-           
-            if(cmd.hasOption(FORMAT_CONFIDENCE_THRESHOLD)){
-                confidenceThreshold = Double.parseDouble(cmd.getOptionValue(FORMAT_CONFIDENCE_THRESHOLD, "-1"));
+
+            // -fct
+            if (cmd.hasOption(FORMAT_CONFIDENCE_THRESHOLD)) {
+                confidenceThreshold = Double.parseDouble(cmd.getOptionValue(
+                        FORMAT_CONFIDENCE_THRESHOLD, "-1"));
             }
-            
-            if(cmd.hasOption(FORMAT_CATEGORY_FILTER)){
+
+            // -fc
+            if (cmd.hasOption(FORMAT_CATEGORY_FILTER)) {
                 category = cmd.getOptionValue(FORMAT_CATEGORY_FILTER);
-                if(category == null) printUsage();
+                if (category == null)
+                    printUsage();
             }
-            
-            ExtractedDataFormater formater = new ExtractedDataFormater(calendar, YAHOO_CONFIG_FILE);
-            formater.format(dir, timeInterval, confidenceThreshold, category, formatToday);
-            
+
+            ExtractedDataFormatter formatter = new ExtractedDataFormatter(
+                    calendar, YAHOO_CONFIG_FILE);
+            formatter.format(dir, timeInterval, confidenceThreshold, category,
+                    formatToday);
+
         }
     }
 
-    /*
-     * extract the news
+    /**
+     * Extract the news
      */
     private static void extractNews(CommandLine cmd) {
-        if(cmd.hasOption(USE_REVERB)){
+        if (cmd.hasOption(USE_REVERB)) {
             reverbExtract(null);
-        }else if(cmd.hasOption(USE_REVERB_WITH_DIR)){
+        } else if (cmd.hasOption(USE_REVERB_WITH_DIR)) {
             String[] dirs = cmd.getOptionValues(USE_REVERB_WITH_DIR);
             reverbExtract(dirs);
         }
     }
 
-    /*
-     * fetch the news online
+    /**
+     * Fetch the news online - used with -s, -p, or -sp.
      */
     private static void fetchNews(CommandLine cmd) {
         try {
-            if (cmd.hasOption(SCRAPE_DATA_ONLY)){//only fetch data from internet, not process the raw data
+            if (cmd.hasOption(SCRAPE_DATA_ONLY)) {
                 fetchYahooRSS(true, false, null);
-            }else if(cmd.hasOption(SCRAPE_DATA_AND_PROCESS_DATA)){
+            } else if (cmd.hasOption(SCRAPE_DATA_AND_PROCESS_DATA)) {
                 fetchYahooRSS(true, true, null);
-            }else if(cmd.hasOption(PROCESS_RSS_WITH_GIVEN_DIR)){
-                fetchYahooRSS(false, true, cmd.getOptionValues(PROCESS_RSS_WITH_GIVEN_DIR));
+            } else if (cmd.hasOption(PROCESS_RSS_WITH_GIVEN_DIR)) {
+                fetchYahooRSS(false, true,
+                        cmd.getOptionValues(PROCESS_RSS_WITH_GIVEN_DIR));
             }
         } catch (IOException excp) {
             excp.printStackTrace();
@@ -147,109 +168,138 @@ public class NewsScraperMain {
     }
 
     /*
-     * validate the number of options passed in args
+     * Validate the number of options passed in args
      */
     private static void validateOptionNumbers(CommandLine cmd) {
         if (cmd.getOptions().length == 0)
-            printUsage();        
+            printUsage();
     }
 
     /*
-     * extract fetched data.
-     * if the direction is null, extract the file in default folder(today's folder)
-     * else fetch the data from the directory specified by the first element, 
-     * and store the result in the directory specified by the second element.
+     * Extract fetched data. if the directory is null, extract the file in
+     * default folder(today's folder) else fetch the data from the directory
+     * specified by the first element, and store the result in the directory
+     * specified by the second element.
      */
     private static void reverbExtract(String[] dir) {
-        
-        ReverbNewsExtractor rne = new ReverbNewsExtractor(calendar, YAHOO_CONFIG_FILE);
-        if(dir == null)
+
+        ReverbNewsExtractor rne = new ReverbNewsExtractor(calendar,
+                YAHOO_CONFIG_FILE);
+        if (dir == null)
             rne.extract(null, null);
-        else if(dir.length == 2 && dir[0] != null && dir[1] != null)
+        else if (dir.length == 2 && dir[0] != null && dir[1] != null)
             rne.extract(dir[0], dir[1]);
         else
             printUsage();
     }
-    
 
     /*
-     * fetch rss from yahoo, store(and/or process it) and store in local file
-     * if want to process the rss, pass in true as first argument
-     * the second argument is the directory where the html is stored, if it's null, 
-     * use today's directory
+     * fetch rss from yahoo, store(and/or process it) and store in local file if
+     * want to process the rss, pass in true as first argument the second
+     * argument is the directory where the html is stored, if it's null, use
+     * today's directory
      */
-    private static void fetchYahooRSS(boolean fetchData, boolean proc, String[] dirs) throws IOException {
+    private static void fetchYahooRSS(boolean fetchData, boolean proc,
+            String[] dirs) throws IOException {
         YahooRssScraper yrs = new YahooRssScraper(calendar);
-        if(fetchData && !proc && dirs == null){//fetch data only
+        if (fetchData && !proc && dirs == null) {// fetch data only
             yrs.scrape(true, false, null, null);
-        }else if(fetchData && proc && dirs == null){//fetch data and then process it
+        } else if (fetchData && proc && dirs == null) {// fetch data and then
+                                                       // process it
             yrs.scrape(true, true, null, null);
-        }else if(!fetchData && proc && dirs.length == 2 
-                && dirs[0] != null && dirs[1] != null){//process data in the given dir
-            
+        } else if (!fetchData && proc && dirs.length == 2 && dirs[0] != null
+                && dirs[1] != null) {// process data in the given dir
+
             yrs.scrape(false, true, dirs[0], dirs[1]);
-        }else{
+        } else {
             printUsage();
         }
     }
 
     /*
-     * setup the comman line options and parse passed in string array
+     * Setup the command line options and parse the passed-in string array
      */
     private static CommandLine getCommands(String[] args, Options options) {
-        
-        Option fetchDataOnlyOp = new Option(SCRAPE_DATA_ONLY, false, 
-                "fetch the rss(without processing it)");
 
-        Option fecthDataAndProcessData = new Option(SCRAPE_DATA_AND_PROCESS_DATA, false, 
-                "fetch rss, then process it");
-        
-        Option processWithDirOp = new Option(PROCESS_RSS_WITH_GIVEN_DIR, false, 
-                "process rss only, the first arg is the source directory, the second dir is the target direcotory to save data");
+        // -s
+        Option fetchDataOnlyOp = new Option(SCRAPE_DATA_ONLY, false,
+                "Fetch the RSS (without processing it).");
+
+        // -sp
+        Option fetchDataAndProcessData = new Option(
+                SCRAPE_DATA_AND_PROCESS_DATA, false,
+                "Fetch RSS and process it.");
+
+        // -p
+        Option processWithDirOp = new Option(
+                PROCESS_RSS_WITH_GIVEN_DIR,
+                false,
+                "Process RSS only: the first arg is the source directory, the " +
+                "second arg is the target directory where data will be saved.");
         processWithDirOp.setArgs(2);
-        
-        Option useReverbOp = new Option(USE_REVERB, false, 
-                "use reverb to extract today's file");
-        
+
+        // -r
+        Option useReverbOp = new Option(USE_REVERB, false,
+                "Use reverb to extract today's file.");
+
+        // -rd
         Option useReverbWithDirOp = new Option(USE_REVERB_WITH_DIR, false,
-                "use reverb to extract files in the first arg and save it into second arg");
+                "Use reverb to extract files in the first arg and save it " +
+                "into second arg directory.");
         useReverbWithDirOp.setArgs(2);
-        
+
+        // -fmt
         Option formaterOp = new Option(FORMAT_OPT, false,
-                "format the reverb news database into human readable file.");
-        
+                "Format the reverb news database into a human readable file.");
+
+        // -ftoday
         Option formatTodayOp = new Option(FORMAT_TODAY, false,
-                "format the today's file; this can not be used with " + FORMAT_TIME_FILTER);
-//        formaterOp.setArgs(2);
-        
-        Option formatConfidenceThreshhold = new Option(FORMAT_CONFIDENCE_THRESHOLD, false, 
-                "this option can not be used without " + FORMAT_OPT + " is being used. " +
-                "This specify a the minimum confidence requirement, if not specified then a" +
-                "a certain number of extraction will be selected");
+                "Format today's file; this can not be used with the "
+                + FORMAT_TIME_FILTER + " option.");
+        // formaterOp.setArgs(2);
+
+        // -fct
+        Option formatConfidenceThreshhold = new Option(
+                FORMAT_CONFIDENCE_THRESHOLD,
+                false,
+                "This option cannot be used without the " + FORMAT_OPT + " option. "
+                + "Specify a minimum confidence requirement; if not specified, "
+                + "then a default number of extractions will be taken.");
         formatConfidenceThreshhold.setArgs(1);
-        
-        Option formatCategoryFilter = new Option(FORMAT_CATEGORY_FILTER, false, 
-                "this option can not be used without " + FORMAT_OPT + " is being used. " +
-                "specify the category nane; if not specified, all categories will be spcified");
+
+        // -fct
+        Option formatCategoryFilter = new Option(
+                FORMAT_CATEGORY_FILTER,
+                false,
+                "This option cannot be used without the " + FORMAT_OPT + " option. " +
+                "Specify the category name; if not specified, all categories" +
+                "will be used.");
         formatCategoryFilter.setArgs(1);
-        
-        Option formatTimeFilter = new Option(FORMAT_TIME_FILTER, false, 
-                "this option can not be used without " + FORMAT_OPT + " is being used. " +
-                "specify the time interval, the files that falls into this interval " +
-                "will be formated(for eg: 2012-05-01 2012-05-04); if not specified, then the default one will be formated");
+
+        // -ft
+        Option formatTimeFilter = new Option(
+                FORMAT_TIME_FILTER,
+                false,
+                "This option cannot be used without the " + FORMAT_OPT + " option. " +
+                "Specify the time interval. The files that fall into this " +
+                "interval will be formatted (for eg: 2012-05-01 2012-05-04); " +
+                "if not specified, then a default interval will be formatted.");
         formatTimeFilter.setArgs(2);
-        
-        Option formatDir = new Option(FORMAT_DIR, false, 
-                "this option can not be used without " + FORMAT_OPT + " is being used. " +
-                "specify the directory of source files and target file, " +
-                "if the it's not secified, then use the default one");
+
+        // -fd
+        Option formatDir = new Option(
+                FORMAT_DIR,
+                false,
+                "This option cannot be used without the " + FORMAT_OPT + " option. " +
+                "Specify the directory of source files and a target file; if " +
+                "not specified, then a default will be used.");
         formatDir.setArgs(2);
-        
-        Option helpOp = new Option(HELP, false,
-                "print program usage");
-        
+
+        // -h
+        Option helpOp = new Option(HELP, false, "print program usage");
+
         options.addOption(fetchDataOnlyOp);
-        options.addOption(fecthDataAndProcessData);
+        options.addOption(fetchDataAndProcessData);
         options.addOption(processWithDirOp);
         options.addOption(useReverbOp);
         options.addOption(useReverbWithDirOp);
@@ -269,14 +319,14 @@ public class NewsScraperMain {
         }
         return cmd;
     }
-    
+
     /*
-     * print the option usage and exit
+     * Print usage and exit
      */
-    private static void printUsage(){
+    private static void printUsage() {
         HelpFormatter f = new HelpFormatter();
         f.printHelp("options:", options);
         System.exit(1);
     }
-    
+
 }
