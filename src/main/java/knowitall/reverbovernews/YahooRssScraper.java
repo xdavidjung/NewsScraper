@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -32,13 +33,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 /**
- * this class fetch the rss data from yahoo, and instore the metadata to the database
- * @author Pingyang He
+ * This class fetches the RSS data from Yahoo and stores the metadata to the database.
+ * @author Pingyang He, David H Jung
  *
  */
 public class YahooRssScraper {
-    
-    private final String CONFIG_FILE_NAME = "YahooRssConfig";
+        
     private final String JSON_BASE_URL = "rss-url";
     private final String JSON_CATEGORY_LIST = "category";
     private final String JSON_RSS_LIST = "rss-list";
@@ -56,6 +56,7 @@ public class YahooRssScraper {
     private final String ENCODE = "UTF-8";
     private final String FOLDER_PATH_SEPERATOR = "/";
     
+    private URL configFile;
     private JsonObject configJO;
     private Calendar calendar;
     private String dateString;
@@ -75,15 +76,16 @@ public class YahooRssScraper {
      * constructor
      * @param calendar indicates the date of today
      */
-    public YahooRssScraper(Calendar calendar){
+    public YahooRssScraper(Calendar calendar, URL configFile) {
         
         this.calendar = calendar;
+        this.configFile = configFile;
         
         rssCategoryList = new ArrayList<RssCategory>();
         duplicateChecker = new HashSet<String>();
         ignoreDate = false;
         dataMap = new HashMap<String, NewsData>();
-//        simpleDataMap = new ArrayList<SimpleNewsData>();
+        // simpleDataMap = new ArrayList<SimpleNewsData>();
     }
     
     /**
@@ -482,7 +484,7 @@ public class YahooRssScraper {
 
     
     /*
-     * read the yahoo configuration file and load it into
+     * read the yahoo configuration file and load it
      */
     private void loadConfig() {
         System.out.println("loading configuration file");
@@ -490,8 +492,8 @@ public class YahooRssScraper {
         Config config = new Config();
         
         try {
-            config.loadConfig(CONFIG_FILE_NAME);
-        } catch (FileNotFoundException e) {
+            config.loadConfig(configFile);
+        } catch (IOException e) {
             emp.printLineMsg("" + this, "failed to load from configuration file");
             e.printStackTrace();
         }

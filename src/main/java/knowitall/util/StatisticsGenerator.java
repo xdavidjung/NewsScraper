@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -31,6 +32,7 @@ import com.google.gson.reflect.TypeToken;
 
 import knowitall.reverbovernews.Config;
 import knowitall.reverbovernews.ExtractedNewsData;
+import knowitall.reverbovernews.NewsScraperMain;
 
 public class StatisticsGenerator {
     
@@ -39,7 +41,7 @@ public class StatisticsGenerator {
     private static String[] dayOfWeek;
     private static Set<String> duplicateChecker;
     
-    public static void main(String[] args){
+    public static void main(String[] args) throws IOException{
 		
         initVar();
         
@@ -140,10 +142,10 @@ public class StatisticsGenerator {
 
 
 
-    private static void loadConfig() {
+    private static void loadConfig() throws IOException {
         Config config = new Config();
         try {
-            config.loadConfig("YahooRssConfig");
+            config.loadConfig(NewsScraperMain.DEFAULT_CONFIG_FILE);
             categoryList = config.getCategory();
             for(int i = 0; i < dayOfWeek.length; i++){
                 dayOfWeekMap.put(dayOfWeek[i], new DayOfWeekData());

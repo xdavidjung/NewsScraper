@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.net.URL;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -28,7 +29,7 @@ public class ReverbNewsExtractor {
     //private final String TARGET_DIR = "reverb_extracted";
     private final String ENCODE = "UTF-8";
     
-    private String configFileName;
+    private URL configFileName;
     private String dateString;
     private String rootDir;
     private String extractedDataSuffix;
@@ -45,12 +46,17 @@ public class ReverbNewsExtractor {
     /**
      * constructor
      * @param calendar gives the time of the caller
-     * @param configFileName tells the location of configuration file
+     * @param configFileName tells the location of configuration file.
+     *        if null, uses a default.
      */
-    public ReverbNewsExtractor(Calendar calendar, String configFileName){
+    public ReverbNewsExtractor(Calendar calendar, URL configFileName){
         System.out.println("preparing for extracting news data");
         this.calendar = calendar;
-        this.configFileName = configFileName;
+        if (configFileName != null) {
+            this.configFileName = configFileName;
+        } else {
+            this.configFileName = this.getClass().getResource("YahooRSSConfig");
+        }
         ignoreDate = false;
         reverb = new ReVerbExtractor();
 //        reverb = new R2A2();
@@ -67,8 +73,9 @@ public class ReverbNewsExtractor {
      * extract data
      * @param srcDir specify the location of source data, if null, then use today's location
      * @param targetDir specify where the result will be stored, if null, then put data in today's location
+     * @throws IOException 
      */
-    public void extract(String srcDir, String targetDir){
+    public void extract(String srcDir, String targetDir) throws IOException{
         
         loadConfig(configFileName);
         String location = null;
@@ -216,14 +223,10 @@ public class ReverbNewsExtractor {
     /*
      * load configuration file from given location and name
      */
-    private void loadConfig(String location) {
+    private void loadConfig(URL location) throws IOException {
         Config config = new Config();
-        try {
-            config.loadConfig(location);
-        } catch (FileNotFoundException e) {
-            
-            e.printStackTrace();
-        }
+        config.loadConfig(location);
+        
         emp = ErrorMessagePrinter.getInstance(config.getRootDir(), calendar);
         rootDir = config.getRootDir();
         dateString = config.getDateFormat().format(calendar.getTime());

@@ -1,6 +1,7 @@
 package knowitall.reverbovernews;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.Calendar;
 
 import org.apache.commons.cli.CommandLine;
@@ -22,7 +23,8 @@ public class NewsScraperMain {
     /**
      * The name of the local file that stores Config information.
      */
-    private static final String YAHOO_CONFIG_FILE = "YahooRssConfig";
+    public static final URL DEFAULT_CONFIG_FILE = 
+            NewsScraperMain.class.getResource("YahooRssConfig");
 
     /**
      * Options that this class recognizes.
@@ -38,10 +40,12 @@ public class NewsScraperMain {
     private static final String FORMAT_TIME_FILTER = "ft";
     private static final String FORMAT_CONFIDENCE_THRESHOLD = "fct";
     private static final String FORMAT_CATEGORY_FILTER = "fc";
+    private static final String USE_CONFIG_FILE = "c";
     private static final String HELP = "h";
 
     private static Calendar calendar;
     private static Options options;
+    private static URL configFile;
 
     public static void main(String[] args) throws IOException {
         initializeVars();
@@ -81,8 +85,9 @@ public class NewsScraperMain {
 
     /**
      * Format the stored data - called when the user uses the option -fmt.
+     * @throws IOException 
      */
-    private static void formatData(CommandLine cmd) {
+    private static void formatData(CommandLine cmd) throws IOException {
         if (cmd.hasOption(FORMAT_OPT)) {
 
             String[] dir = null;
@@ -93,7 +98,6 @@ public class NewsScraperMain {
             String category = null;
 
             // check for additional options used with fmt.
-            // -fd
             if (cmd.hasOption(FORMAT_DIR)) {
                 dir = cmd.getOptionValues(FORMAT_DIR);
                 if (dir.length != 2 || dir[0] == null || dir[1] == null) {
@@ -101,13 +105,11 @@ public class NewsScraperMain {
                 }
             }
 
-            // -ftoday
             if (cmd.hasOption(FORMAT_TODAY)) {
                 if (cmd.hasOption(FORMAT_TIME_FILTER))
                     printUsage();
                 formatToday = true;
 
-            // -ft
             } else if (cmd.hasOption(FORMAT_TIME_FILTER)) {
                 timeInterval = cmd.getOptionValues(FORMAT_TIME_FILTER);
                 if (timeInterval.length != 2 || timeInterval[0] == null
@@ -116,13 +118,11 @@ public class NewsScraperMain {
                 }
             }
 
-            // -fct
             if (cmd.hasOption(FORMAT_CONFIDENCE_THRESHOLD)) {
                 confidenceThreshold = Double.parseDouble(cmd.getOptionValue(
                         FORMAT_CONFIDENCE_THRESHOLD, "-1"));
             }
 
-            // -fc
             if (cmd.hasOption(FORMAT_CATEGORY_FILTER)) {
                 category = cmd.getOptionValue(FORMAT_CATEGORY_FILTER);
                 if (category == null)
@@ -130,7 +130,7 @@ public class NewsScraperMain {
             }
 
             ExtractedDataFormatter formatter = new ExtractedDataFormatter(
-                    calendar, YAHOO_CONFIG_FILE);
+                    calendar, DEFAULT_CONFIG_FILE);
             formatter.format(dir, timeInterval, confidenceThreshold, category,
                     formatToday);
 
@@ -139,8 +139,9 @@ public class NewsScraperMain {
 
     /**
      * Extract the news
+     * @throws IOException 
      */
-    private static void extractNews(CommandLine cmd) {
+    private static void extractNews(CommandLine cmd) throws IOException {
         if (cmd.hasOption(USE_REVERB)) {
             reverbExtract(null);
         } else if (cmd.hasOption(USE_REVERB_WITH_DIR)) {
@@ -154,6 +155,12 @@ public class NewsScraperMain {
      */
     private static void fetchNews(CommandLine cmd) {
         try {
+            // check for config file
+            if (cmd.hasOption(USE_CONFIG_FILE)) {
+                String configFileAbsPath = cmd.getOptionValue(USE_CONFIG_FILE);
+                configFile = new URL(configFileAbsPath);
+            }
+            
             if (cmd.hasOption(SCRAPE_DATA_ONLY)) {
                 fetchYahooRSS(true, false, null);
             } else if (cmd.hasOption(SCRAPE_DATA_AND_PROCESS_DATA)) {
@@ -181,10 +188,10 @@ public class NewsScraperMain {
      * specified by the first element, and store the result in the directory
      * specified by the second element.
      */
-    private static void reverbExtract(String[] dir) {
+    private static void reverbExtract(String[] dir) throws IOException {
 
         ReverbNewsExtractor rne = new ReverbNewsExtractor(calendar,
-                YAHOO_CONFIG_FILE);
+                DEFAULT_CONFIG_FILE);
         if (dir == null)
             rne.extract(null, null);
         else if (dir.length == 2 && dir[0] != null && dir[1] != null)
@@ -201,7 +208,13 @@ public class NewsScraperMain {
      */
     private static void fetchYahooRSS(boolean fetchData, boolean proc,
             String[] dirs) throws IOException {
-        YahooRssScraper yrs = new YahooRssScraper(calendar);
+        YahooRssScraper yrs = null; 
+        if (configFile == null) {
+            yrs = new YahooRssScraper(calendar, DEFAULT_CONFIG_FILE);
+        } else {
+            yrs = new YahooRssScraper(calendar, configFile);
+        }
+        
         if (fetchData && !proc && dirs == null) {// fetch data only
             yrs.scrape(true, false, null, null);
         } else if (fetchData && proc && dirs == null) {// fetch data and then
@@ -267,12 +280,12 @@ public class NewsScraperMain {
                 + "then a default number of extractions will be taken.");
         formatConfidenceThreshhold.setArgs(1);
 
-        // -fct
+        // -fc
         Option formatCategoryFilter = new Option(
                 FORMAT_CATEGORY_FILTER,
                 false,
                 "This option cannot be used without the " + FORMAT_OPT + " option. " +
-                "Specify the category name; if not specified, all categories" +
+                "Specify the category name; if not specified, all categories " +
                 "will be used.");
         formatCategoryFilter.setArgs(1);
 
@@ -295,6 +308,13 @@ public class NewsScraperMain {
                 "not specified, then a default will be used.");
         formatDir.setArgs(2);
 
+        // -c
+        Option useConfig = new Option(
+                USE_CONFIG_FILE,
+                false,
+                "Specifies the absolute path to a config file to use.");
+        useConfig.setArgs(1);
+        
         // -h
         Option helpOp = new Option(HELP, false, "print program usage");
 
@@ -309,6 +329,7 @@ public class NewsScraperMain {
         options.addOption(formatCategoryFilter);
         options.addOption(formatTimeFilter);
         options.addOption(formatDir);
+        options.addOption(useConfig);
         options.addOption(helpOp);
         CommandLineParser parser = new PosixParser();
         CommandLine cmd = null;

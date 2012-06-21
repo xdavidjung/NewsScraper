@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -14,22 +15,15 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 public class ExtractedDataFormatter {
     
@@ -41,7 +35,7 @@ public class ExtractedDataFormatter {
     private String rootDir;
     private String dateFormatStr;
     private DateFormat dateFormat;
-//    private String dateString;
+    // private String dateString;
     private String extractedDataSuffix;
     private String extractedDataDir;
     private String srcDir;
@@ -60,8 +54,9 @@ public class ExtractedDataFormatter {
      * 
      * @param calendar
      * @param configFileLocation
+     * @throws IOException 
      */
-    public ExtractedDataFormatter(Calendar calendar, String configFileLocation){
+    public ExtractedDataFormatter(Calendar calendar, URL configFileLocation) throws IOException{
         
         startDate = null;
         endDate = null;
@@ -293,7 +288,7 @@ public class ExtractedDataFormatter {
     /*
      * load configuration file from given location and name
      */
-    private void loadConfig(String location) {
+    private void loadConfig(URL location) throws IOException {
         Config config = new Config();
         try {
             config.loadConfig(location);

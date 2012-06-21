@@ -1,23 +1,28 @@
 package knowitall.reverbovernews;
 
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+/**
+ * This class reads a configuration file (JSON) and then holds data
+ * gained from the config file. 
+ * @author Pingyang He, David H Jung
+ *
+ */
 public class Config {
     
-    private final String ENCODE = "UTF-8";
     private final String JSON_FOLDER_NAME = "folder-name";
-//  private final String JSON_DATE_FORMAT = "date-format";
+    // private final String JSON_DATE_FORMAT = "date-format";
     private final String JSON_EXTRACTED_DATA_SUFFIX = "extracted_data_suffix";
     private final String JSON_EXTRACTED_DIR = "extracted_data_dir";
     private final String JSON_FORMATTED_EXTRACTED_DATA = "formatted_extracted_data_dir";
@@ -35,12 +40,12 @@ public class Config {
     /**
      * load the configuration file with given file location
      * @param configFile is the location of the configuration file
-     * @throws FileNotFoundException
+     * @throws IOException 
      */
-    public void loadConfig(String configFile) throws FileNotFoundException{
+    public void loadConfig(URL configFile) throws IOException{
         
         String fileContent = readFile(configFile);
-        
+
         config = (JsonObject)(new JsonParser()).parse(fileContent);
         rootDir = config.get(JSON_FOLDER_NAME).getAsString();
 //      dateFormat = new SimpleDateFormat(config.get(JSON_DATE_FORMAT).getAsString());
@@ -115,11 +120,12 @@ public class Config {
     /*
      * read the given file into memory as a string
      */
-    private String readFile(String configFile) throws FileNotFoundException {
-        Scanner sc = new Scanner(new File(configFile), ENCODE);
+    private String readFile(URL configFile) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(configFile.openStream()));
         StringBuilder sb = new StringBuilder();
-        while(sc.hasNextLine())
-            sb.append(sc.nextLine());
+        String nextLine;
+        while((nextLine = br.readLine()) != null)
+            sb.append(nextLine);
         
         return sb.toString();
     }
