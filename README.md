@@ -4,9 +4,6 @@ NewsScraper is a program that takes in raw news data from an RSS feed and
 processes it using ReVerb, extracting binary relationships from "useful" 
 sentences in the RSS feed articles. 
 
-The YahooRssConfig file contains information about how the Yahoo RSS will
-be parsed.
-
 
 ## Quick use:
 
@@ -21,13 +18,13 @@ usage: options:
                 then a default number of extractions will be taken.
 
     -fd <arg>   This option cannot be used without the fmt option.
-                Specify the directory of source files and a target file; if
+                Specify the directory of source files and a target directory; if
                 not specified, then a default will be used.
 
-    -fmt        Format the reverb news database into human readable file.
+    -fmt        Format the reverb news database into a human readable file.
 
     -ft <arg>   This option cannot be used without the fmt option.
-                Specify the time interval. The files that fall into this
+                Specify a time interval. The files that fall into this
                 interval will be formatted (for eg: 2012-05-01 2012-05-04); 
                 if not specified, then a default interval will be formatted.
 
