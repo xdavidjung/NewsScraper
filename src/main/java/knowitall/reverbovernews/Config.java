@@ -22,7 +22,6 @@ import com.google.gson.JsonParser;
 public class Config {
     
     private final String JSON_FOLDER_NAME = "folder-name";
-    // private final String JSON_DATE_FORMAT = "date-format";
     private final String JSON_EXTRACTED_DATA_SUFFIX = "extracted_data_suffix";
     private final String JSON_EXTRACTED_DIR = "extracted_data_dir";
     private final String JSON_FORMATTED_EXTRACTED_DATA = "formatted_extracted_data_dir";
@@ -48,7 +47,6 @@ public class Config {
 
         config = (JsonObject)(new JsonParser()).parse(fileContent);
         rootDir = config.get(JSON_FOLDER_NAME).getAsString();
-//      dateFormat = new SimpleDateFormat(config.get(JSON_DATE_FORMAT).getAsString());
         dateFormat = new SimpleDateFormat(DATE_FORMAT_STRING);
         extractedDataSuffix = config.get(JSON_EXTRACTED_DATA_SUFFIX).getAsString();
         extractedDataDir = config.get(JSON_EXTRACTED_DIR).getAsString();
@@ -57,6 +55,10 @@ public class Config {
         generateCategoryList();
     }
     
+    /*
+     * This reads the category list from the json config file and stores
+     * them as Strings in the categoryList variable.
+     */
     private void generateCategoryList() {
         JsonArray categoryJA = config.get(JSON_CATEGORY_LIST).getAsJsonArray();
         for(int i = 0; i < categoryJA.size(); i++){
@@ -65,15 +67,14 @@ public class Config {
     }
 
     /**
-     * return the dataFormat we want to use.
-     * @return
+     * @return the dataFormat to use.
      */
     public DateFormat getDateFormat(){
         return dateFormat;
     }
     
     /**
-     * @return the instance of current configuration.
+     * @return the instance of the current configuration.
      */
     public JsonObject getConfig(){
         return config;
