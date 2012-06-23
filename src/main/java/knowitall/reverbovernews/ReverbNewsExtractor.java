@@ -35,7 +35,6 @@ public class ReverbNewsExtractor {
     private String extractedDataSuffix;
     private String extractedDataDir;
     private Calendar calendar;
-    private ErrorMessagePrinter emp;
     private ReVerbExtractor reverb;
 //    private ReVerbRelationExtractor reverb;
     private Map<Long, ExtractedNewsData> data;

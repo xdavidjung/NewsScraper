@@ -26,15 +26,42 @@ public class Config {
     private final String JSON_EXTRACTED_DIR = "extracted_data_dir";
     private final String JSON_FORMATTED_EXTRACTED_DATA = "formatted_extracted_data_dir";
     private final String DATE_FORMAT_STRING = "yyyy-MM-dd";
-    
-    private String rootDir;
-    private JsonObject config;
-    private DateFormat dateFormat;
-    private String extractedDataSuffix;
-    private String extractedDataDir;
-    private String formattedExtractedDataDir;
-    private List<String> categoryList;
     private final String JSON_CATEGORY_LIST = "category";
+
+    /** 
+     * The json object holding all the configuration 
+     * information for this instance.
+     */
+    private JsonObject config;
+    
+    /**
+     * The directory where everything is stored - must end in "/".
+     */
+    private String rootDir;
+
+    /**
+     * How dates are formatted.
+     */
+    private DateFormat dateFormat;
+    
+    //  TODO: what is this for?
+    private String extractedDataSuffix;
+    
+    /**
+     * The directory to place extracted data.
+     */
+    private String extractedDataDir;
+    
+    /**
+     * The directory to place formatted extracted data.
+     */
+    private String formattedExtractedDataDir;
+    
+    /**
+     * The list of all the categories in the RSS feed the user is
+     * interested in.
+     */
+    private List<String> categoryList;
     
     /**
      * load the configuration file with given file location

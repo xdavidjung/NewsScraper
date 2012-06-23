@@ -28,17 +28,28 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import org.slf4j.LoggerFactory;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.rolling.RollingFileAppender;
+import ch.qos.logback.core.rolling.TimeBasedRollingPolicy;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 /**
- * This class fetches the RSS data from Yahoo and stores the metadata to the database.
+ * This class fetches the RSS data from Yahoo and stores the metadata to the
+ * database.
+ * 
  * @author Pingyang He, David H Jung
- *
+ * 
  */
 public class YahooRssScraper {
-        
+
+    private Logger logger;
+    
     private final String JSON_BASE_URL = "rss-url";
     private final String JSON_CATEGORY_LIST = "category";
     private final String JSON_RSS_LIST = "rss-list";
@@ -52,87 +63,112 @@ public class YahooRssScraper {
     private final String LINK_GARBAGE_TAIL = "\n";
     private final String GARBAGE_TAIL = "...";
     private final String USELESS_CONTENT_INDICATOR = "[...]";
-    private final String[] ENDING_PUNCTUATION = {".", "?", "!", ".\"", "?\"", "!\""};
+    private final String[] ENDING_PUNCTUATION = { ".", "?", "!", ".\"", "?\"",
+            "!\"" };
     private final String ENCODE = "UTF-8";
     private final String FOLDER_PATH_SEPERATOR = "/";
-    
+
     private URL configFile;
     private JsonObject configJO;
     private Calendar calendar;
     private String dateString;
-    private ErrorMessagePrinter emp;
     private String baseURL;
     private List<RssCategory> rssCategoryList;
     private String outputLocation;
     private String rawDataDir;
     private Map<String, NewsData> dataMap;
-//    private List<SimpleNewsData> simpleDataMap;
     private int sentenceMinimumLengthRequirement;
     private Set<String> duplicateChecker;
     private boolean ignoreDate;
     private DateFormat dateFormat;
-    
+
     /**
      * constructor
-     * @param calendar indicates the date of today
+     * 
+     * @param calendar
+     *            Today's date
      */
     public YahooRssScraper(Calendar calendar, URL configFile) {
-        
+
         this.calendar = calendar;
         this.configFile = configFile;
+        setupLogger();
+        
         
         rssCategoryList = new ArrayList<RssCategory>();
         duplicateChecker = new HashSet<String>();
         ignoreDate = false;
         dataMap = new HashMap<String, NewsData>();
-        // simpleDataMap = new ArrayList<SimpleNewsData>();
     }
-    
+
+    /*
+     * Sets up the logger.
+     */
+    private void setupLogger() {
+        logger = (Logger) LoggerFactory.getLogger(YahooRssScraper.class);
+        RollingFileAppender<ILoggingEvent> rfa = new RollingFileAppender<ILoggingEvent>();
+        TimeBasedRollingPolicy<ILoggingEvent> tbrp = new TimeBasedRollingPolicy<ILoggingEvent>();
+        
+        tbrp.setFileNamePattern("logs/%d.log");
+        tbrp.setMaxHistory(30);
+        tbrp.setContext((LoggerContext) LoggerFactory.getILoggerFactory());
+        
+        rfa.setRollingPolicy(tbrp);
+        logger.addAppender(rfa);
+    }
+
     /**
      * 
-     * @param fetchData indicates whether use wants to fetch data online
-     * @param processData if this is true, the data fetched online will be processed and stored
-     * to database, otherwise only the fetched data will be saved
-     * @param sourceDir tells where the html that will be scraped is stored; if it's null, use today's directory
-     * @targetDir where the processed data will be stored
+     * @param fetchData
+     *            Whether to fetch data from the RSS.
+     * @param processData
+     *            Whether to process and store fetched data.
+     * @param sourceDir
+     *            Where to store the scraped HTML data.
+     * @param targetDir
+     *            Where to store the process data.
      */
-    public void scrape(boolean fetchData, boolean processData, String sourceDir, String targetDir){
-        
-        if(sourceDir != null && targetDir != null)
+    public void scrape(boolean fetchData, boolean processData,
+            String sourceDir, String targetDir) {
+
+        if (sourceDir != null && targetDir != null)
             ignoreDate = true;
-        
+
         loadConfig();
 
-        if(fetchData)
+        if (fetchData)
             fetchData();
-        
-        if(processData){
-            if(sourceDir == null && targetDir == null)
+
+        if (processData) {
+            if (sourceDir == null && targetDir == null)
                 processHtml(rawDataDir);
-            else if(sourceDir != null && targetDir != null){
+            else if (sourceDir != null && targetDir != null) {
                 outputLocation = targetDir.trim();
-                if(!outputLocation.endsWith(FOLDER_PATH_SEPERATOR))outputLocation += FOLDER_PATH_SEPERATOR;
+                if (!outputLocation.endsWith(FOLDER_PATH_SEPERATOR))
+                    outputLocation += FOLDER_PATH_SEPERATOR;
+                
                 File locationFile = new File(outputLocation);
                 locationFile.mkdirs();
-                if(!locationFile.exists())
-                    emp.printLineMsg("" + this, "failed to create target folder");
+                
+                if (!locationFile.exists())
+                    logger.error("scrape(): " +
+                    		"Failure to create target folder.");
                 
                 processHtml(sourceDir);
-            }else{
+            } else {
                 throw new IllegalArgumentException();
             }
-            outputDataBase();
+            outputDatabase();
         }
     }
 
-    
     /*
      * output the map data to database in json format
      */
-    private void outputDataBase() {
-        System.out.println("start to output news data");
-        
-        //load id number from last time
+    private void outputDatabase() {
+        logger.info("outputDatabase(): Outputting news data.");
+
+        // load id number from last time
         long prevCount;
         long currentCount;
         File idCountFile = new File(ID_COUNT_FILE_NAME);
@@ -142,46 +178,51 @@ public class YahooRssScraper {
             prevCount = sc.nextLong();
             currentCount = prevCount + 1;
         } catch (FileNotFoundException e) {
-            emp.printLineMsg("" + this, "can't find idCount");
+            logger.error("outputDatabase(): Can't find idCount file.");
             currentCount = -1;
             prevCount = -1;
         }
-        
+
         try {
 
             String dataLocation = outputLocation + "data/";
             File f = new File(dataLocation);
             f.mkdirs();
-            
-            String rssData = dataLocation + dateString + "_" + OUTPUT_DATABASE_NAME;
+
+            String rssData = dataLocation + dateString + "_"
+                    + OUTPUT_DATABASE_NAME;
             File dataFile = new File(rssData);
             dataFile.createNewFile();
-            
-            //not using JSON since converting json to string doesn't support unicode
+
+            // not using JSON since converting json to string doesn't support
+            // unicode
             StringBuilder sb = new StringBuilder();
             sb.append("{");
             String seperator = ", ";
-            for(String title : dataMap.keySet()){
-                sb.append("\"" + currentCount++ + "\": " + dataMap.get(title).toJsonString() + seperator);
+            for (String title : dataMap.keySet()) {
+                sb.append("\"" + currentCount++ + "\": "
+                        + dataMap.get(title).toJsonString() + seperator);
             }
-            //fense post problem
-            if(!dataMap.isEmpty())
+            // fense post problem
+            if (!dataMap.isEmpty())
                 sb.delete(sb.length() - seperator.length(), sb.length());
-            
+
             sb.append("}");
-            BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(rssData)),ENCODE));
-            if(sb.length() < 100)
-                emp.printLineMsg("" + this, "output data is too short");
+            BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
+                    new FileOutputStream(new File(rssData)), ENCODE));
+            if (sb.length() < 100)
+                logger.error("outputDatabase(): " +
+                		"Output data is too short.");
             out.write(sb.toString());
             out.close();
-            
+
         } catch (Exception e) {
-            emp.printLineMsg("" + this, "fail to output data");
+            logger.error("outputDatabase(): " +
+            		"Failure to output data.");
             e.printStackTrace();
         }
-        
-        
-        //write the new id count to file
+
+        // write the new id count to file
         FileWriter idCountStream;
         try {
             idCountStream = new FileWriter(ID_COUNT_FILE_NAME);
@@ -189,266 +230,295 @@ public class YahooRssScraper {
             idOut.write(prevCount + " " + currentCount);
             idOut.close();
         } catch (IOException e) {
-            emp.printLineMsg("" + this, "can't increase id count");
+            logger.error("outputDatabase(): " +
+            		"Failure to increase id count.");
             e.printStackTrace();
         }
-        System.out.println("finished outputing news data");
-        
+        logger.info("outputDatabase(): Finished outputting news data.");
+
     }
 
     /*
-     * parse the files in given directory into map
-     * dir is the html files directory
+     * parse the files in given directory into map dir is the html files
+     * directory
      */
     private void processHtml(String dir) {
-        
-        //make sure dir ends with '/'
-        if(!dir.endsWith("/")) dir = dir + "/";
-        
-        System.out.println("start processing html");
+
+        // make sure dir ends with '/'
+        if (!dir.endsWith("/"))
+            dir = dir + "/";
+
+        logger.info("processHtml(): Start processing HTML.");
 
         File rawDataFile = new File(dir);
         String[] files = rawDataFile.list();
-        
-        if(ignoreDate && files.length > 0){
+
+        if (ignoreDate && files.length > 0) {
             String fileDate = getFileDate(files[0]);
-            if(fileDate != null)
+            if (fileDate != null)
                 dateString = fileDate;
         }
-        
-        for(String fileName : files){
-            System.out.print("process " + fileName);
+
+        for (String fileName : files) {
+            logger.info("processHtml(): Process {}", fileName);
             int timeSeperatorPos = fileName.indexOf('_');
             int catSeperatorPos = fileName.indexOf('_', timeSeperatorPos + 1);
-            String categoryName = fileName.substring(timeSeperatorPos + 1, catSeperatorPos);
-            String rssName = fileName.substring(catSeperatorPos + 1, fileName.indexOf('.'));
-            
-            //read rss file from local disk
+            String categoryName = fileName.substring(timeSeperatorPos + 1,
+                    catSeperatorPos);
+            String rssName = fileName.substring(catSeperatorPos + 1,
+                    fileName.indexOf('.'));
+
+            // read rss file from local disk
             String fileContent = getFileContent(dir + fileName, ENCODE);
-//            System.out.println("fileContent: " + fileContent);
-            
+
             Document wholeHtml = Jsoup.parse(fileContent);
-            
-            //each item contains a news
+
+            // each item contains a news
             Elements items = wholeHtml.getElementsByTag("item");
-            for(Element item : items){
-                try{
-                    String pubdate = item.getElementsByTag("pubdate").first().text();
-                    if(checkDateMatch(pubdate) || ignoreDate){
-                        
-                        //get news' title
-                        Element titleEle = item.getElementsByTag("title").first();
+            for (Element item : items) {
+                try {
+                    String pubdate = item.getElementsByTag("pubdate").first()
+                            .text();
+                    if (checkDateMatch(pubdate) || ignoreDate) {
+
+                        // get news' title
+                        Element titleEle = item.getElementsByTag("title")
+                                .first();
                         String title = titleEle.text().trim();
-                        
-                        //make sure no duplicate news
-                        if(!dataMap.containsKey(title)){
-                            
-                            //make sure it's today's news
-                            Element desc = item.getElementsByTag("description").first();
-                            desc = Jsoup.parse(StringEscapeUtils.unescapeHtml4(desc.toString()));
-                            
+
+                        // make sure no duplicate news
+                        if (!dataMap.containsKey(title)) {
+
+                            // make sure it's today's news
+                            Element desc = item.getElementsByTag("description")
+                                    .first();
+                            desc = Jsoup.parse(StringEscapeUtils
+                                    .unescapeHtml4(desc.toString()));
+
                             Element para = desc.getElementsByTag("p").first();
-//                        
-                            NewsData data = new NewsData(categoryName, rssName, title, dateString);
+                            NewsData data = new NewsData(categoryName, rssName,
+                                    title, dateString);
                             getURL(item, data);
-                            
+
                             getSource(item, data);
-                            
+
                             getImageUrl(item, data);
-                            
-                            if(para == null){//description has no child tag "p"
-                                
-                                //length check
+
+                            if (para == null) {// description has no child tag
+                                               // "p"
+
+                                // length check
                                 String descText = desc.text().trim();
                                 descText = fixContent(descText);
-                                if(descText == null) continue;
-                                if(descText.length() > sentenceMinimumLengthRequirement 
-                                        && !duplicateChecker.contains(descText)){
+                                if (descText == null)
+                                    continue;
+                                if (descText.length() > sentenceMinimumLengthRequirement
+                                        && !duplicateChecker.contains(descText)) {
                                     duplicateChecker.add(descText);
                                     data.content = descText;
                                     dataMap.put(title, data);
                                 }
-                            }else{
-                                
-                                //length check
+                            } else {
+
+                                // length check
                                 String paraText = para.text().trim();
-                                if(paraText.length() > sentenceMinimumLengthRequirement){
+                                if (paraText.length() > sentenceMinimumLengthRequirement) {
                                     paraText = fixContent(paraText);
-                                    if(paraText == null) continue;
-                                    if(duplicateChecker.contains(paraText))    continue;
+                                    if (paraText == null)
+                                        continue;
+                                    if (duplicateChecker.contains(paraText))
+                                        continue;
                                     duplicateChecker.add(paraText);
                                     data.content = paraText;
                                 }
-                                
-                                try{
-                                    //process image info
-                                    Element img = para.getElementsByTag("a").first().getElementsByTag("img").first();
-                                    if(data.imgUrl.length() < 1)
+
+                                try {
+                                    // process image info
+                                    Element img = para.getElementsByTag("a")
+                                            .first().getElementsByTag("img")
+                                            .first();
+                                    if (data.imgUrl.length() < 1)
                                         data.imgUrl = img.attr("src");
                                     String imgAlt = img.attr("alt").trim();
-                                    if(imgAlt.length() > sentenceMinimumLengthRequirement
-                                            && !duplicateChecker.contains(imgAlt)){
+                                    if (imgAlt.length() > sentenceMinimumLengthRequirement
+                                            && !duplicateChecker
+                                                    .contains(imgAlt)) {
                                         data.imgAlt = imgAlt;
                                         duplicateChecker.add(imgAlt);
                                     }
-                                    
+
                                     String imgTitle = img.attr("title");
-                                    if(imgTitle.length() > sentenceMinimumLengthRequirement
-                                            && !duplicateChecker.contains(imgTitle)){
+                                    if (imgTitle.length() > sentenceMinimumLengthRequirement
+                                            && !duplicateChecker
+                                                    .contains(imgTitle)) {
                                         data.imgTitle = img.attr("title");
                                         duplicateChecker.add(imgTitle);
                                     }
-                                }catch (NullPointerException e){
-                                    System.out.println(categoryName + ": " + rssName + ": " + title + " ----- has no image");
+                                } catch (NullPointerException e) {
+                                    String[] params = {categoryName, rssName, title};
+                                    logger.error("processHtml(): " +
+                                        "{}: {}: {} -- has no image.", params);
                                 }
                                 dataMap.put(title, data);
-//                                simpleDataMap.add(sData);
+                                // simpleDataMap.add(sData);
                             }
                         }
                     }
-                }catch (Exception e){
+                } catch (Exception e) {
+                    Object[] params = {this, categoryName, rssName, e.getMessage()};
+                    logger.error("YahooRssScraper: processHtml(): " +
+                    		"{}: {} {}", params);
                     e.printStackTrace();
-                    emp.printLineMsg("" + this + ": " + categoryName + " " + rssName, e.getMessage());
                 }
             }
-            System.out.println(" successfully");
         }
-        System.out.println("end processing html");
+        logger.info("processHtml(): End processing HTML.");
     }
 
     /*
      * check if the given date is the same as dateString
      */
     private boolean checkDateMatch(String pubdate) {
-        if(pubdate.substring(0, 10).equals(dateString)){
+        if (pubdate.substring(0, 10).equals(dateString)) {
             return true;
         }
-        DateFormat formatter = new SimpleDateFormat("");
         try {
             Date d = dateFormat.parse(dateString);
             int dayPos = pubdate.indexOf(' ');
             int monthPos = pubdate.indexOf(' ', dayPos + 1);
             int yearPos = pubdate.indexOf(' ', monthPos + 1);
             int endPos = pubdate.indexOf(' ', yearPos + 1);
-            Calendar c = Calendar.getInstance();
-            c.setTime(d);
+            Calendar c1 = Calendar.getInstance();
+            Calendar c2 = Calendar.getInstance();
             DateFormat monthFormat = new SimpleDateFormat("MMM", Locale.ENGLISH);
             Date dm = monthFormat.parse(pubdate.substring(monthPos + 1, yearPos));
-            if(c.get(c.DAY_OF_MONTH) == Integer.parseInt(pubdate.substring(dayPos + 1, monthPos))
-                    &&c.get(c.MONTH) == dm.getMonth()
-                    &&c.get(c.YEAR) == Integer.parseInt(pubdate.substring(yearPos + 1, endPos))){
+            
+            c1.setTime(d);
+            c2.setTime(dm);
+            if (c1.get(Calendar.DAY_OF_MONTH) == Integer.parseInt(pubdate.substring(
+                    dayPos + 1, monthPos))
+                    && c1.get(Calendar.MONTH) == c2.get(Calendar.MONTH)
+                    && c1.get(Calendar.YEAR) == Integer.parseInt(pubdate.substring(
+                            yearPos + 1, endPos))) {
                 return true;
             }
         } catch (ParseException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return false;
     }
-    
 
     private String getFileDate(String fileName) {
-        try{
+        try {
             return fileName.substring(0, 10);
-        }catch (Exception e){
+        } catch (Exception e) {
             return null;
         }
     }
 
     private void getImageUrl(Element item, NewsData data) {
         Elements allElements = item.getAllElements();
-        for(Element element : allElements){
-            if(element.tagName().equals("media:text")){
-                Element content = Jsoup.parse(StringEscapeUtils.unescapeHtml4(element.toString()));
+        for (Element element : allElements) {
+            if (element.tagName().equals("media:text")) {
+                Element content = Jsoup.parse(StringEscapeUtils
+                        .unescapeHtml4(element.toString()));
                 Elements allContent = content.getAllElements();
-                for(Element c : allContent){
-                    if(c.tagName().equals("img")){
+                for (Element c : allContent) {
+                    if (c.tagName().equals("img")) {
                         String imageUrl = element.attr("src");
-                        if(imageUrl != null && imageUrl.length() > 0 ){
-                            System.out.println(imageUrl);
+                        if (imageUrl != null && imageUrl.length() > 0) {
+                            logger.info("getImageUrl(): {}.", imageUrl);
                             data.imgUrl = imageUrl;
                             break;
                         }
-                    }                    
+                    }
                 }
             }
         }
     }
 
     /*
-     * gets the source of given ite, then store it in data
+     * gets the source of given site, then store it in data
      */
     private void getSource(Element item, NewsData data) {
-        try{
+        try {
             String source = item.getElementsByTag("source").first().text();
-            
-            if(source.length() < 1){
+
+            if (source.length() < 1) {
                 String itemText = item.html();
                 int sourceTagPos = itemText.indexOf(TAG_SOURCE);
                 int sourceEndPos = itemText.indexOf('<', sourceTagPos + 1);
-                if(sourceTagPos >= 0 && sourceEndPos >= 0)
-                    source = removeNewLineTail(itemText.substring(sourceTagPos + TAG_SOURCE.length(), sourceEndPos));
+                if (sourceTagPos >= 0 && sourceEndPos >= 0)
+                    source = removeNewLineTail(itemText.substring(sourceTagPos
+                            + TAG_SOURCE.length(), sourceEndPos));
             }
-            
+
             data.source = source;
-        }catch (Exception e){
+        } catch (Exception e) {
             return;
         }
-        
+
     }
 
     /*
      * gets the url of the given item, and stores it in data
      */
     private void getURL(Element item, NewsData data) {
-        try{
+        try {
             String url = item.getElementsByTag("link").first().text().trim();
-            if(url.length() < 1){
+            if (url.length() < 1) {
                 String itemText = item.html();
                 int linkTagPos = itemText.indexOf(TAG_LINK);
                 int linkEndPos = itemText.indexOf('<', linkTagPos + 1);
-                if(linkTagPos >= 0 && linkEndPos >= 0)
-                    url = removeNewLineTail(itemText.substring(linkTagPos + TAG_LINK.length(), linkEndPos));
+                if (linkTagPos >= 0 && linkEndPos >= 0)
+                    url = removeNewLineTail(itemText.substring(linkTagPos
+                            + TAG_LINK.length(), linkEndPos));
             }
             data.url = url.trim();
-        }catch (Exception e){
+        } catch (Exception e) {
             return;
         }
     }
-    
+
     /*
      * remove the new line character at the end of the given string
      */
-    private String removeNewLineTail(String str){
-        if(str.endsWith(LINK_GARBAGE_TAIL)) 
-            return str.substring(0, str.length() - LINK_GARBAGE_TAIL.length()).trim();
+    private String removeNewLineTail(String str) {
+        if (str.endsWith(LINK_GARBAGE_TAIL))
+            return str.substring(0, str.length() - LINK_GARBAGE_TAIL.length())
+                    .trim();
         return str;
     }
 
     /*
-     * get rid of useless information in a paragraph, if the whole paragraph is 
-     * useless, return null 
+     * get rid of useless information in a paragraph, if the whole paragraph is
+     * useless, return null
      */
     private String fixContent(String paraText) {
-        
-        if(paraText.endsWith(USELESS_CONTENT_INDICATOR)) return null;    
 
-        //get rid of the leading publisher info
+        if (paraText.endsWith(USELESS_CONTENT_INDICATOR))
+            return null;
+
+        // get rid of the leading publisher info
         int pubSep = paraText.indexOf(REUTERS_KEYWORD);
-        if(pubSep >= 0) paraText = paraText.substring(pubSep + REUTERS_KEYWORD.length());
-        
+        if (pubSep >= 0)
+            paraText = paraText.substring(pubSep + REUTERS_KEYWORD.length());
+
         int HealthyDayPos = paraText.indexOf(HEALTHYDAY_KEYWORD);
-        if(HealthyDayPos >= 0) paraText = paraText.substring(HealthyDayPos + HEALTHYDAY_KEYWORD.length());
-        
-        if(paraText.endsWith(GARBAGE_TAIL)){
-            //get rid of the "..." at the end of the content
+        if (HealthyDayPos >= 0)
+            paraText = paraText.substring(HealthyDayPos
+                    + HEALTHYDAY_KEYWORD.length());
+
+        if (paraText.endsWith(GARBAGE_TAIL)) {
+            // get rid of the "..." at the end of the content
             paraText = paraText.substring(0, paraText.length() - 3).trim();
-            for(int i = 0; i < ENDING_PUNCTUATION.length; i++){
-                if(paraText.endsWith(ENDING_PUNCTUATION[i])) return paraText;
+            for (int i = 0; i < ENDING_PUNCTUATION.length; i++) {
+                if (paraText.endsWith(ENDING_PUNCTUATION[i]))
+                    return paraText;
             }
-        }else
+        } else
             return paraText;
-        
+
         return null;
     }
 
@@ -456,141 +526,151 @@ public class YahooRssScraper {
      * fetch data online from yahoo rss.
      */
     private void fetchData() {
-        System.out.println("start fectching data");
+        logger.info("fetchData(): Start fetching data.");
+        
         File rawDir = new File(rawDataDir);
         rawDir.mkdirs();
-        for(int i = 0; i < rssCategoryList.size(); i++){
+        for (int i = 0; i < rssCategoryList.size(); i++) {
             RssCategory rCat = rssCategoryList.get(i);
-            for(int j = 0; j < rCat.rssList.length; j++){
+            for (int j = 0; j < rCat.rssList.length; j++) {
                 String rssName = rCat.rssList[j];
                 try {
                     Document doc = Jsoup.connect(baseURL + rssName).get();
-                    
-                    //write fetched xml to local data
-                    BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(rawDataDir + dateString + "_" + rCat.categoryName + "_" + rssName + ".html"), true),ENCODE));
+
+                    // write fetched xml to local data
+                    BufferedWriter out = new BufferedWriter(
+                            new OutputStreamWriter(new FileOutputStream(
+                                    new File(rawDataDir + dateString + "_"
+                                            + rCat.categoryName + "_" + rssName
+                                            + ".html"), true), ENCODE));
                     out.write(doc.toString());
                     out.close();
                     
-                    System.out.println("fetch " + rCat.categoryName + ": " + rssName + " successfully");
-                    
+                    logger.info("fetchData(): " +
+                        "Fetched {}: {} successfully", rCat.categoryName, rssName);
+
                 } catch (IOException e) {
-                    emp.printLineMsg("" + this, "can not download: " + rCat.categoryName + "_" + rssName);
+                    logger.error("fetchData(): " +
+                		"Failed to download: {}_{}", rCat.categoryName, rssName);
                     e.printStackTrace();
                 }
             }
         }
-        System.out.println("done fetching");
+        logger.info("fetchData(): End fetching.");
     }
 
-    
     /*
      * read the yahoo configuration file and load it
      */
     private void loadConfig() {
-        System.out.println("loading configuration file");
-        
+        logger.info("loadConfig(): Loading configuration file.");
+
         Config config = new Config();
-        
+
         try {
             config.loadConfig(configFile);
         } catch (IOException e) {
-            emp.printLineMsg("" + this, "failed to load from configuration file");
+            logger.error("loadConfig(): failed to load config file.");
             e.printStackTrace();
         }
         configJO = config.getConfig();
-//        String configFile = getFileContent(CONFIG_FILE_NAME, "ascii");
-//        configJO = (JsonObject)(new JsonParser()).parse(configFile);
+        // String configFile = getFileContent(CONFIG_FILE_NAME, "ascii");
+        // configJO = (JsonObject)(new JsonParser()).parse(configFile);
 
-        //load date format
-//        DateFormat dateFormat = new SimpleDateFormat(configJO.get(JSON_DATE_FORMAT).getAsString());
+        // load date format
+        // DateFormat dateFormat = new
+        // SimpleDateFormat(configJO.get(JSON_DATE_FORMAT).getAsString());
         dateFormat = config.getDateFormat();
         dateString = dateFormat.format(calendar.getTime());
-        emp = ErrorMessagePrinter.getInstance(config.getRootDir(), calendar);
         
-        //if data folder not exist, create one
-        if(!ignoreDate)
-            makeTodayDirectory(config.getRootDir());
-        
-        //get base url
+        // if data folder not exist, create one
+        if (!ignoreDate)
+            makeDailyDirectory(config.getRootDir());
+
+        // get base url
         baseURL = configJO.get(JSON_BASE_URL).getAsString();
-        System.out.println("URL used: " + baseURL);
+        logger.info("loadConfig(): URL used: {}", baseURL);
         
-        //get the category list
-        JsonArray categoryJA = configJO.get(JSON_CATEGORY_LIST).getAsJsonArray();
-        for(int i = 0; i < categoryJA.size(); i++){
-            rssCategoryList.add(new RssCategory(categoryJA.get(i).getAsString()));
+        // get the category list
+        JsonArray categoryJA = configJO.get(JSON_CATEGORY_LIST)
+                .getAsJsonArray();
+        for (int i = 0; i < categoryJA.size(); i++) {
+            rssCategoryList
+                    .add(new RssCategory(categoryJA.get(i).getAsString()));
         }
-        
-        //load rsslist
+
+        // load rsslist
         JsonObject rssList = (JsonObject) configJO.get(JSON_RSS_LIST);
-        for(int i = 0; i < rssCategoryList.size(); i++){
+        for (int i = 0; i < rssCategoryList.size(); i++) {
             RssCategory rc = rssCategoryList.get(i);
             String categoryName = rc.categoryName;
-            rc.rssList = new Gson().fromJson(rssList.get(categoryName), String[].class);
+            rc.rssList = new Gson().fromJson(rssList.get(categoryName),
+                    String[].class);
         }
-        sentenceMinimumLengthRequirement = configJO.get(JSON_SENTENCE_MINIMUM_LENGTH_REQUIREMENT).getAsInt();
+        sentenceMinimumLengthRequirement = configJO.get(
+                JSON_SENTENCE_MINIMUM_LENGTH_REQUIREMENT).getAsInt();
         rawDataDir = outputLocation + "raw_data/";
-        
-        
+
     }
 
     /*
-     * create directory for today's data
+     * Create the directory for today's data
      */
-    private void makeTodayDirectory(String dataFolderLoction) {
-        
-        File folder = new File(dataFolderLoction);
-        if(!folder.exists())
+    private void makeDailyDirectory(String dataFolderLocation) {
+
+        // make sure that the root directory exists
+        File folder = new File(dataFolderLocation);
+        if (!folder.exists())
             folder.mkdir();
-                
-        //if today's folder not exist, create one
-        outputLocation = dataFolderLoction + dateString + "/";
+
+        // make sure today's folder exists
+        outputLocation = dataFolderLocation + dateString + "/";
         File todayFolder = new File(outputLocation);
         todayFolder.mkdir();
-        
-        //if the folder is not created
-        if(!todayFolder.exists()){
-            
-            emp.printLineMsg("" + this, "can't crate today's directory");
+
+        // if the folder is not created
+        if (!todayFolder.exists()) {
+            logger.error("makeDailydirectory(): " +
+            		"Failure to create today's directory.");
             System.exit(1);
         }
-        
-        
+
     }
 
     /*
-     * load file to a string then return it 
+     * load file to a string then return it
      */
     private String getFileContent(String fileName, String encode) {
         StringBuilder sb = new StringBuilder();
         try {
 
             Scanner configScanner = new Scanner(new File(fileName), encode);
-            while(configScanner.hasNextLine()){
+            while (configScanner.hasNextLine()) {
                 sb.append(configScanner.nextLine());
             }
-            
+
             configScanner.close();
-            
+
         } catch (FileNotFoundException e) {
-            emp.printLineMsg("" + this, "can not load file: " + fileName);
+            logger.error("getFileContent(): " +
+            		"Failure to load file: {}", fileName);
             e.printStackTrace();
             return null;
         }
         return sb.toString();
     }
-    
+
     /*
-     * contains the category name and rss list
-     * eg: categoryName:ENTERTAINMENT, rssList:
+     * contains the category name and RSS list eg: categoryName:ENTERTAINMENT,
+     * rssList:
      */
-    private class RssCategory{
+    private class RssCategory {
         public String categoryName;
         public String[] rssList;
-        
-        public RssCategory(String categoryName){
+
+        public RssCategory(String categoryName) {
             this.categoryName = categoryName;
         }
     }
-    
+
 }

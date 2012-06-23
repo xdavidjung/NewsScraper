@@ -31,7 +31,6 @@ public class ExtractedDataFormatter {
     private final String ENCODE = "UTF-8";
 
     private Calendar calendar;
-    private ErrorMessagePrinter emp;
     private String rootDir;
     private String dateFormatStr;
     private DateFormat dateFormat;
