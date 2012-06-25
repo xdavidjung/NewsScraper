@@ -16,12 +16,12 @@ import org.apache.commons.cli.PosixParser;
  * This class is used to scrape news from the internet from the command line.
  * 
  * @author Pingyang He, David H Jung
- * 
  */
 public class NewsScraperMain {
 
     /**
-     * The name of the local file that stores Config information.
+     * The name of the default local file that stores Config information.
+     * This particular config file uses the Yahoo RSS feed.
      */
     public static final URL DEFAULT_CONFIG_FILE = 
             NewsScraperMain.class.getResource("YahooRssConfig");
@@ -54,6 +54,8 @@ public class NewsScraperMain {
 
         validateOptionNumbers(cmd);
 
+        fetchConfigFile();
+
         fetchNews(cmd);
 
         extractNews(cmd);
@@ -61,22 +63,13 @@ public class NewsScraperMain {
         formatData(cmd);
 
         help(cmd);
-
-    }
-
-    /**
-     * Outputs a help message.
-     * 
-     * @modifies nothing
-     */
-    private static void help(CommandLine cmd) {
-        if (cmd.hasOption(HELP)) {
-            printUsage();
-        }
     }
 
     /**
      * Initialize variables for this object.
+     *
+     * @mofidies calendar, options.
+     * @effects initializes them.
      */
     private static void initializeVars() {
         calendar = Calendar.getInstance();
@@ -84,8 +77,60 @@ public class NewsScraperMain {
     }
 
     /**
-     * Format the stored data - called when the user uses the option -fmt.
-     * @throws IOException 
+     * Fetch news data from the RSS. 
+     * @param cmd CommandLine object containing the commands/options data.
+     */
+    private static void fetchNews(CommandLine cmd) {
+        
+        YahooRssScraper yrs = new YahooRssScraper(calendar, configFile);
+
+        // -s
+        if (cmd.hasOption(SCRAPE_DATA_ONLY)) {
+            yrs.scrape(true, false, null, null);
+
+        // -sp
+        } else if (cmd.hasOption(SCRAPE_DATA_AND_PROCESS_DATA)) {
+            yrs.scrape(true, true, null, null);
+
+        // -p
+        } else if (cmd.hasOption(PROCESS_RSS_WITH_GIVEN_DIR)) {
+            String[] dirs = cmd.getOptionValues(PROCESS_RSS_WITH_GIVEN_DIR);
+            yrs.scrape(false, true, dirs[0], dirs[1]);
+
+        } else {
+            printUsage();
+        }
+    }
+
+    // TODO: rename to "getExtractions" or something like it.
+    /**
+     * Pulls out extractions from the news data using ReVerb.
+     * @throws IOException if the configuration file cannot be found. 
+     */
+    private static void extractNews(CommandLine cmd) throws IOException {
+        ReverbNewsExtractor rne = new ReverbNewsExtractor(calendar, configFile);
+
+        // -r
+        if (cmd.hasOption(USE_REVERB)) {
+            rne.extract(null, null);
+        
+        // -rd
+        } else if (cmd.hasOption(USE_REVERB_WITH_DIR)) {
+            String[] dirs = cmd.getOptionValues(USE_REVERB_WITH_DIR);
+            if (dirs != null && dirs.length == 2) {
+                rne.extract(dir[0], dir[1]);
+            } else {
+                printUsage();
+            }
+
+        } else {
+            printUsage();
+        }
+    }
+
+    /**
+     * Format the stored data - called when the user uses the -fmt option.
+     * @throws IOException if the configuration file cannot be found. 
      */
     private static void formatData(CommandLine cmd) throws IOException {
         if (cmd.hasOption(FORMAT_OPT)) {
@@ -137,100 +182,8 @@ public class NewsScraperMain {
         }
     }
 
-    /**
-     * Extract the news
-     * @throws IOException 
-     */
-    private static void extractNews(CommandLine cmd) throws IOException {
-        if (cmd.hasOption(USE_REVERB)) {
-            reverbExtract(null);
-        } else if (cmd.hasOption(USE_REVERB_WITH_DIR)) {
-            String[] dirs = cmd.getOptionValues(USE_REVERB_WITH_DIR);
-            reverbExtract(dirs);
-        }
-    }
-
-    /**
-     * Fetch the news online - used with -s, -p, or -sp.
-     */
-    private static void fetchNews(CommandLine cmd) {
-        try {
-            // check for config file
-            if (cmd.hasOption(USE_CONFIG_FILE)) {
-                String configFileAbsPath = cmd.getOptionValue(USE_CONFIG_FILE);
-                configFile = new URL(configFileAbsPath);
-            }
-            
-            if (cmd.hasOption(SCRAPE_DATA_ONLY)) {
-                fetchYahooRSS(true, false, null);
-            } else if (cmd.hasOption(SCRAPE_DATA_AND_PROCESS_DATA)) {
-                fetchYahooRSS(true, true, null);
-            } else if (cmd.hasOption(PROCESS_RSS_WITH_GIVEN_DIR)) {
-                fetchYahooRSS(false, true,
-                        cmd.getOptionValues(PROCESS_RSS_WITH_GIVEN_DIR));
-            }
-        } catch (IOException excp) {
-            excp.printStackTrace();
-        }
-    }
-
     /*
-     * Validate the number of options passed in args
-     */
-    private static void validateOptionNumbers(CommandLine cmd) {
-        if (cmd.getOptions().length == 0)
-            printUsage();
-    }
-
-    /*
-     * Extract fetched data. if the directory is null, extract the file in
-     * default folder(today's folder) else fetch the data from the directory
-     * specified by the first element, and store the result in the directory
-     * specified by the second element.
-     */
-    private static void reverbExtract(String[] dir) throws IOException {
-
-        ReverbNewsExtractor rne = new ReverbNewsExtractor(calendar,
-                DEFAULT_CONFIG_FILE);
-        if (dir == null)
-            rne.extract(null, null);
-        else if (dir.length == 2 && dir[0] != null && dir[1] != null)
-            rne.extract(dir[0], dir[1]);
-        else
-            printUsage();
-    }
-
-    /*
-     * fetch rss from yahoo, store(and/or process it) and store in local file if
-     * want to process the rss, pass in true as first argument the second
-     * argument is the directory where the html is stored, if it's null, use
-     * today's directory
-     */
-    private static void fetchYahooRSS(boolean fetchData, boolean proc,
-            String[] dirs) throws IOException {
-        YahooRssScraper yrs = null; 
-        if (configFile == null) {
-            yrs = new YahooRssScraper(calendar, DEFAULT_CONFIG_FILE);
-        } else {
-            yrs = new YahooRssScraper(calendar, configFile);
-        }
-        
-        if (fetchData && !proc && dirs == null) {// fetch data only
-            yrs.scrape(true, false, null, null);
-        } else if (fetchData && proc && dirs == null) {// fetch data and then
-                                                       // process it
-            yrs.scrape(true, true, null, null);
-        } else if (!fetchData && proc && dirs.length == 2 && dirs[0] != null
-                && dirs[1] != null) {// process data in the given dir
-
-            yrs.scrape(false, true, dirs[0], dirs[1]);
-        } else {
-            printUsage();
-        }
-    }
-
-    /*
-     * Setup the command line options and parse the passed-in string array
+     * Setup the command line options and parse the passed-in string array.
      */
     private static CommandLine getCommands(String[] args, Options options) {
 
@@ -331,6 +284,7 @@ public class NewsScraperMain {
         options.addOption(formatDir);
         options.addOption(useConfig);
         options.addOption(helpOp);
+
         CommandLineParser parser = new PosixParser();
         CommandLine cmd = null;
         try {
@@ -339,6 +293,45 @@ public class NewsScraperMain {
             printUsage();
         }
         return cmd;
+    }
+
+    /*
+     * Initializes configFile. 
+     * @modifies configFile
+     * @effects if the user has specified a configuration file, configFile is assigned
+     *          its URL; else, configFile is assigned to DEFAULT_CONFIG_FILE.
+     */
+    private void fetchConfigFile() {
+        try {
+            if (cmd.hasOption(USE_CONFIG_FILE)) {
+                String configFileAbsPath = cmd.getOptionValue(USE_CONFIG_FILE);
+                configFile = new URL(configFileAbsPath);
+            } else {
+                configFile = DEFAULT_CONFIG_FILE;
+            }
+
+        } catch (IOException e) {
+            // TODO: log this w/ backlog
+            e.printStackTrace();
+        }
+    }
+
+    /*
+     * Validate the number of options passed in args
+     */
+    private static void validateOptionNumbers(CommandLine cmd) {
+        if (cmd.getOptions().length == 0)
+            printUsage();
+    }
+
+    /**
+     * Outputs a help message.
+     * @modifies nothing
+     */
+    private static void help(CommandLine cmd) {
+        if (cmd.hasOption(HELP)) {
+            printUsage();
+        }
     }
 
     /*
