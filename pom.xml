@@ -10,6 +10,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -65,14 +66,23 @@
       <version>1.4.0</version>
     </dependency>
   </dependencies>
+
   <build>
     <resources>
       <resource>
         <targetPath>knowitall/reverbovernews</targetPath>
         <filtering>false</filtering>
-        <directory>src/main/java/knowitall/reverbovernews</directory>
+        <directory>${basedir}/src/main/config</directory>
         <includes>
           <include>YahooRssConfig</include>
+        </includes>
+        <excludes></excludes>
+      </resource>
+      <resource>
+        <filtering>false</filtering>
+        <directory>${basedir}/src/main/resources</directory>
+        <includes>
+          <include>logback.xml</include>
         </includes>
         <excludes></excludes>
       </resource>
@@ -103,4 +113,5 @@
       </plugin>
     </plugins>
   </build>
+  
 </project>
