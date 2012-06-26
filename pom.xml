@@ -72,7 +72,7 @@
       <resource>
         <targetPath>knowitall/reverbovernews</targetPath>
         <filtering>false</filtering>
-        <directory>${basedir}/src/main/config</directory>
+        <directory>${basedir}/src/main/java/knowitall/reverbovernews</directory>
         <includes>
           <include>YahooRssConfig</include>
         </includes>
