@@ -14,21 +14,24 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import edu.washington.cs.knowitall.extractor.R2A2;
 import edu.washington.cs.knowitall.extractor.ReVerbExtractor;
-import edu.washington.cs.knowitall.extractor.ReVerbRelationExtractor;
 import edu.washington.cs.knowitall.nlp.OpenNlpSentenceChunker;
 import edu.washington.cs.knowitall.nlp.extraction.ChunkedBinaryExtraction;
 import edu.washington.cs.knowitall.util.DefaultObjects;
 
 public class ReverbNewsExtractor {
-    
-    //private final String TARGET_DIR = "reverb_extracted";
+
+    // private final String TARGET_DIR = "reverb_extracted";
     private final String ENCODE = "UTF-8";
-    
+
+    private Logger logger;
+
     private URL configFileName;
     private String dateString;
     private String rootDir;
@@ -36,20 +39,22 @@ public class ReverbNewsExtractor {
     private String extractedDataDir;
     private Calendar calendar;
     private ReVerbExtractor reverb;
-//    private ReVerbRelationExtractor reverb;
+    // private ReVerbRelationExtractor reverb;
     private Map<Long, ExtractedNewsData> data;
-    private OpenNlpSentenceChunker chuncker;
-    //this will be true when user are not extracting data for today's data
+    private OpenNlpSentenceChunker chunker;
+    // this will be true when user are not extracting data for today's data
     private boolean ignoreDate;
-    
+
     /**
-     * constructor
-     * @param calendar gives the time of the caller
-     * @param configFileName tells the location of configuration file.
-     *        if null, uses a default.
+     * @param calendar
+     *            gives the time of the caller
+     * @param configFileName
+     *            tells the location of configuration file. if null, uses a
+     *            default.
      */
-    public ReverbNewsExtractor(Calendar calendar, URL configFileName){
-        System.out.println("preparing for extracting news data");
+    public ReverbNewsExtractor(Calendar calendar, URL configFileName) {
+        logger = LoggerFactory.getLogger(ReverbNewsExtractor.class);
+                
         this.calendar = calendar;
         if (configFileName != null) {
             this.configFileName = configFileName;
@@ -58,81 +63,93 @@ public class ReverbNewsExtractor {
         }
         ignoreDate = false;
         reverb = new ReVerbExtractor();
-//        reverb = new R2A2();
         data = new HashMap<Long, ExtractedNewsData>();
         try {
-            chuncker = new OpenNlpSentenceChunker();
+            chunker = new OpenNlpSentenceChunker();
         } catch (IOException e) {
-            emp.printLineMsg("" + this, "can't initialize sentence chunker");
-            e.printStackTrace();
+            logger.error("Constructor: unable to initialize sentence chunker.");
+            logger.error("{}", e);
         }
     }
-    
+
     /**
-     * extract data
-     * @param srcDir specify the location of source data, if null, then use today's location
-     * @param targetDir specify where the result will be stored, if null, then put data in today's location
-     * @throws IOException 
+     * Get extractions from the data.
+     * 
+     * @param srcDir
+     *            specify the location of source data, if null, then use today's
+     *            location
+     * @param targetDir
+     *            specify where the result will be stored, if null, then put
+     *            data in today's location
+     * @throws IOException
      */
-    public void extract(String srcDir, String targetDir) throws IOException{
-        
+    public void extract(String srcDir, String targetDir) throws IOException {
+
         loadConfig(configFileName);
+        
+        logger.info("Constructor: Preparing to extract news data.");
+        
         String location = null;
-        if(srcDir == null && targetDir == null){//extract from default location
+        if (srcDir == null && targetDir == null) {
+            // extract from the default location
             location = rootDir + dateString + "/data/";
-        }else if(srcDir != null && targetDir != null){
+        } else if (srcDir != null && targetDir != null) {
             location = srcDir;
-        }else{
-            throw new IllegalArgumentException("the arguments put into extract is wrong");
+        } else {
+            logger.error("extract(): bad directories.");
         }
-        
-        if(!location.endsWith("/")) location += "/";
-        
-        System.out.println("location: " + location);
+
+        if (!location.endsWith("/"))
+            location += "/";
+
+        logger.info("extract(): Location: {}", location);
         File dataFolder = new File(location);
         String[] dataFiles = dataFolder.list();
-        if(dataFiles == null){
-            emp.printLineMsg("" + this, "can't load: " + location);
+        if (dataFiles == null) {
+            logger.error("extract(): Can't load {}.", location);
             return;
         }
-        for(String fileName : dataFiles){
+        for (String fileName : dataFiles) {
             extractData(loadData(location + fileName));
-            
-            //start outputting data
-            if(targetDir == null){
-            	outputData(rootDir + "/" + extractedDataDir + "/");
-            }else{
-            	ignoreDate = true;
-            	dateString = fileName.substring(0, 10);
-            	if(!targetDir.endsWith("/")) targetDir += "/";
-            	outputData(targetDir);
+
+            // start outputting data
+            if (targetDir == null) {
+                outputData(rootDir + "/" + extractedDataDir + "/");
+            } else {
+                ignoreDate = true;
+                dateString = fileName.substring(0, 10);
+                if (!targetDir.endsWith("/"))
+                    targetDir += "/";
+                outputData(targetDir);
             }
             data.clear();
         }
-        
-        
-        System.out.println("extraction finished");
+
+        logger.info("Extraction finished.");
     }
 
-    
     /*
      * parse the given newsData json string and extract the info in the string
      */
     private void extractData(String newsData) {
-        System.out.println("start extracting data");
+        logger.info("extractData(): Starting extraction.");
         Gson gson = new Gson();
-        HashMap<Long, ExtractedNewsData> map = gson.fromJson(newsData, new TypeToken<HashMap<Long, ExtractedNewsData>>(){}.getType());
+        HashMap<Long, ExtractedNewsData> map = gson.fromJson(newsData,
+                new TypeToken<HashMap<Long, ExtractedNewsData>>() {
+                }.getType());
         Iterator<Entry<Long, ExtractedNewsData>> it = map.entrySet().iterator();
-        while(it.hasNext()){
-            Map.Entry<Long, ExtractedNewsData> pairs = (Map.Entry<Long, ExtractedNewsData>)it.next();
-            ExtractedNewsData currentData = (ExtractedNewsData) pairs.getValue();
+        while (it.hasNext()) {
+            Map.Entry<Long, ExtractedNewsData> pairs = (Map.Entry<Long, ExtractedNewsData>) it
+                    .next();
+            ExtractedNewsData currentData = (ExtractedNewsData) pairs
+                    .getValue();
             currentData.extractions = new HashMap<String, ChunkedBinaryExtraction>();
             reverbExtract(currentData, currentData.imgAlt);
             reverbExtract(currentData, currentData.imgTitle);
             reverbExtract(currentData, currentData.content);
             reverbExtract(currentData, currentData.title);
         }
-        //add this map to the wholeData
+        // add this map to the wholeData
         data.putAll(map);
     }
 
@@ -140,55 +157,82 @@ public class ReverbNewsExtractor {
      * 
      */
     private void outputData(String targetDir) {
-        System.out.println("start outputing data");
-        
+        logger.info("outputData(): Starting to output data.");
+
         File targetFolder = new File(targetDir);
-        if(!targetDir.endsWith("/")) targetDir += "/";
+        if (!targetDir.endsWith("/"))
+            targetDir += "/";
         targetFolder.mkdirs();
-        if (!targetFolder.exists()) emp.printLineMsg("" + this, "can't create folder");
-        String jsonDataDir = targetDir + dateString + "_ExtractedData." + extractedDataSuffix;
-//        String readableDataDir = targetDir + dateString + "_readable.txt";
-        System.out.println("storing in " + jsonDataDir);
+        if (!targetFolder.exists())
+            logger.error("outputData(): can't create folder.");
+        String jsonDataDir = targetDir + dateString + "_ExtractedData."
+                + extractedDataSuffix;
+        // String readableDataDir = targetDir + dateString + "_readable.txt";
+        logger.info("outputData(): storing in {}", targetDir);
         File jsonDataFile = new File(jsonDataDir);
-//        File readableFile = new File(readableDataDir);
-        
+
         try {
             jsonDataFile.createNewFile();
-            if(!jsonDataFile.exists()) emp.printLineMsg("" + this, "can't create output file data");
-            BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(jsonDataFile),ENCODE));
-            Iterator<Entry<Long, ExtractedNewsData>> it = data.entrySet().iterator();
-            
-            //create json output string manually
-            StringBuilder sb = new StringBuilder();
-            sb.append("{");
-            String seperator = ", ";
-            boolean empty = true;
-            while(it.hasNext()){
-                empty = false;
-                Map.Entry<Long, ExtractedNewsData> pair = (Map.Entry<Long, ExtractedNewsData>)it.next();
-                sb.append("\"" + pair.getKey() + "\": " + pair.getValue().toJsonString() + seperator);
-            }
-            if(!empty) sb.delete(sb.length() - seperator.length(), sb.length());
-            sb.append("}");
+        } catch (IOException e) {
+            logger.error("outputData(): Unable to create new jsonDataFile.");
+            logger.error("{}", e);
+        }
+
+        if (!jsonDataFile.exists())
+            logger.error("outputData(): can't create output file data.");
+        BufferedWriter out = null;
+
+        try {
+            out = new BufferedWriter(new OutputStreamWriter(
+                    new FileOutputStream(jsonDataFile), ENCODE));
+        } catch (Exception e) {
+            logger.error("outputData(): Unable to create new Buffered"
+                    + "Writer object.");
+            logger.error("{}", e);
+        }
+
+        Iterator<Entry<Long, ExtractedNewsData>> it = data.entrySet()
+                .iterator();
+
+        // create JSON output string manually
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        String seperator = ", ";
+        boolean empty = true;
+
+        while (it.hasNext()) {
+            empty = false;
+            Map.Entry<Long, ExtractedNewsData> pair = (Map.Entry<Long, ExtractedNewsData>) it
+                    .next();
+            sb.append("\"" + pair.getKey() + "\": "
+                    + pair.getValue().toJsonString() + seperator);
+        }
+
+        if (!empty)
+            sb.delete(sb.length() - seperator.length(), sb.length());
+        sb.append("}");
+        try {
             out.write(sb.toString());
             out.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("outputData(): Error writing to/closing BufferedWriter.");
+            logger.error("{}", e);
         }
     }
-    
-    
+
     /*
-     * extract the given string, and store the extracted information into the given ExtractedNewsData
+     * extract the given string, and store the extracted information into the
+     * given ExtractedNewsData
      */
     private void reverbExtract(ExtractedNewsData currentData, String str) {
-        if(str != null && str.length() > 1){
+        if (str != null && str.length() > 1) {
             try {
-//                BufferedReader br = new BufferedReader(new StringReader(str));
-                String[] sentences = DefaultObjects.getDefaultSentenceDetector().sentDetect(str);
-                
+                String[] sentences = DefaultObjects
+                        .getDefaultSentenceDetector().sentDetect(str);
+
                 for (String sent : sentences) {
-                    for (ChunkedBinaryExtraction extr : reverb.extract(chuncker.chunkSentence(sent))) {
+                    for (ChunkedBinaryExtraction extr : reverb.extract(chunker
+                            .chunkSentence(sent))) {
                         currentData.extractions.put(sent.toString(), extr);
                     }
                 }
@@ -198,22 +242,22 @@ public class ReverbNewsExtractor {
         }
     }
 
-
     /*
-     * load file with given location, and return files content
+     * Load file with given location and return file content.
      */
     private String loadData(String location) {
-        System.out.println("loading data from: " + location);
+        logger.info("loadData(): Loading data from: {}", location);
         StringBuilder sb = new StringBuilder();
         Scanner sc = null;
         try {
-            
             sc = new Scanner(new File(location), ENCODE);
-            while(sc.hasNextLine()) sb.append(sc.nextLine());
+            while (sc.hasNextLine())
+                sb.append(sc.nextLine());
+            
         } catch (FileNotFoundException e) {
-            emp.printLineMsg("" + this, "can't load data from loadData");
-            e.printStackTrace();
-        } finally{
+            logger.error("loadData(): Unable to load data.");
+            logger.error("{}", e);
+        } finally {
             sc.close();
         }
         return sb.toString();
@@ -225,13 +269,11 @@ public class ReverbNewsExtractor {
     private void loadConfig(URL location) throws IOException {
         Config config = new Config();
         config.loadConfig(location);
-        
-        emp = ErrorMessagePrinter.getInstance(config.getRootDir(), calendar);
+
         rootDir = config.getRootDir();
         dateString = config.getDateFormat().format(calendar.getTime());
         extractedDataSuffix = config.getExtractedDataSuffix();
         extractedDataDir = config.getExtractedDataDir();
     }
-    
-    
+
 }

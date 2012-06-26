@@ -11,6 +11,8 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * This class is used to scrape news from the internet from the command line.
@@ -20,11 +22,13 @@ import org.apache.commons.cli.PosixParser;
 public class NewsScraperMain {
 
     /**
-     * The name of the default local file that stores Config information.
-     * This particular config file uses the Yahoo RSS feed.
+     * The name of the default local file that stores Config information. This
+     * particular config file uses the Yahoo RSS feed.
      */
-    public static final URL DEFAULT_CONFIG_FILE = 
-            NewsScraperMain.class.getResource("YahooRssConfig");
+    public static final URL DEFAULT_CONFIG_FILE = NewsScraperMain.class
+            .getResource("YahooRssConfig");
+
+    private static Logger logger;
 
     /**
      * Options that this class recognizes.
@@ -54,11 +58,11 @@ public class NewsScraperMain {
 
         validateOptionNumbers(cmd);
 
-        fetchConfigFile();
+        fetchConfigFile(cmd);
 
         fetchNews(cmd);
 
-        extractNews(cmd);
+        getExtractions(cmd);
 
         formatData(cmd);
 
@@ -67,21 +71,24 @@ public class NewsScraperMain {
 
     /**
      * Initialize variables for this object.
-     *
+     * 
      * @mofidies calendar, options.
      * @effects initializes them.
      */
     private static void initializeVars() {
         calendar = Calendar.getInstance();
         options = new Options();
+        logger = LoggerFactory.getLogger(NewsScraperMain.class);
     }
 
     /**
-     * Fetch news data from the RSS. 
-     * @param cmd CommandLine object containing the commands/options data.
+     * Fetch news data from the RSS.
+     * 
+     * @param cmd
+     *            CommandLine object containing the commands/options data.
      */
     private static void fetchNews(CommandLine cmd) {
-        
+
         YahooRssScraper yrs = new YahooRssScraper(calendar, configFile);
 
         // -s
@@ -102,35 +109,36 @@ public class NewsScraperMain {
         }
     }
 
-    // TODO: rename to "getExtractions" or something like it.
     /**
      * Pulls out extractions from the news data using ReVerb.
-     * @throws IOException if the configuration file cannot be found. 
+     * 
+     * @throws IOException
+     *             if the configuration file cannot be found.
      */
-    private static void extractNews(CommandLine cmd) throws IOException {
+    private static void getExtractions(CommandLine cmd) throws IOException {
         ReverbNewsExtractor rne = new ReverbNewsExtractor(calendar, configFile);
 
         // -r
         if (cmd.hasOption(USE_REVERB)) {
             rne.extract(null, null);
-        
-        // -rd
+
+            // -rd
         } else if (cmd.hasOption(USE_REVERB_WITH_DIR)) {
             String[] dirs = cmd.getOptionValues(USE_REVERB_WITH_DIR);
             if (dirs != null && dirs.length == 2) {
-                rne.extract(dir[0], dir[1]);
+                rne.extract(dirs[0], dirs[1]);
             } else {
                 printUsage();
             }
 
-        } else {
-            printUsage();
         }
     }
 
     /**
      * Format the stored data - called when the user uses the -fmt option.
-     * @throws IOException if the configuration file cannot be found. 
+     * 
+     * @throws IOException
+     *             if the configuration file cannot be found.
      */
     private static void formatData(CommandLine cmd) throws IOException {
         if (cmd.hasOption(FORMAT_OPT)) {
@@ -200,8 +208,8 @@ public class NewsScraperMain {
         Option processWithDirOp = new Option(
                 PROCESS_RSS_WITH_GIVEN_DIR,
                 false,
-                "Process RSS only: the first arg is the source directory, the " +
-                "second arg is the target directory where data will be saved.");
+                "Process RSS only: the first arg is the source directory, the "
+                        + "second arg is the target directory where data will be saved.");
         processWithDirOp.setArgs(2);
 
         // -r
@@ -210,8 +218,8 @@ public class NewsScraperMain {
 
         // -rd
         Option useReverbWithDirOp = new Option(USE_REVERB_WITH_DIR, false,
-                "Use reverb to extract files in the first arg and save it " +
-                "into second arg directory.");
+                "Use reverb to extract files in the first arg and save it "
+                        + "into second arg directory.");
         useReverbWithDirOp.setArgs(2);
 
         // -fmt
@@ -221,53 +229,60 @@ public class NewsScraperMain {
         // -ftoday
         Option formatTodayOp = new Option(FORMAT_TODAY, false,
                 "Format today's file; this can not be used with the "
-                + FORMAT_TIME_FILTER + " option.");
+                        + FORMAT_TIME_FILTER + " option.");
         // formaterOp.setArgs(2);
 
         // -fct
         Option formatConfidenceThreshhold = new Option(
                 FORMAT_CONFIDENCE_THRESHOLD,
                 false,
-                "This option cannot be used without the " + FORMAT_OPT + " option. "
-                + "Specify a minimum confidence requirement; if not specified, "
-                + "then a default number of extractions will be taken.");
+                "This option cannot be used without the "
+                        + FORMAT_OPT
+                        + " option. "
+                        + "Specify a minimum confidence requirement; if not specified, "
+                        + "then a default number of extractions will be taken.");
         formatConfidenceThreshhold.setArgs(1);
 
         // -fc
         Option formatCategoryFilter = new Option(
                 FORMAT_CATEGORY_FILTER,
                 false,
-                "This option cannot be used without the " + FORMAT_OPT + " option. " +
-                "Specify the category name; if not specified, all categories " +
-                "will be used.");
+                "This option cannot be used without the "
+                        + FORMAT_OPT
+                        + " option. "
+                        + "Specify the category name; if not specified, all categories "
+                        + "will be used.");
         formatCategoryFilter.setArgs(1);
 
         // -ft
         Option formatTimeFilter = new Option(
                 FORMAT_TIME_FILTER,
                 false,
-                "This option cannot be used without the " + FORMAT_OPT + " option. " +
-                "Specify the time interval. The files that fall into this " +
-                "interval will be formatted (for eg: 2012-05-01 2012-05-04); " +
-                "if not specified, then a default interval will be formatted.");
+                "This option cannot be used without the "
+                        + FORMAT_OPT
+                        + " option. "
+                        + "Specify the time interval. The files that fall into this "
+                        + "interval will be formatted (for eg: 2012-05-01 2012-05-04); "
+                        + "if not specified, then a default interval will be formatted.");
         formatTimeFilter.setArgs(2);
 
         // -fd
         Option formatDir = new Option(
                 FORMAT_DIR,
                 false,
-                "This option cannot be used without the " + FORMAT_OPT + " option. " +
-                "Specify the directory of source files and a target file; if " +
-                "not specified, then a default will be used.");
+                "This option cannot be used without the "
+                        + FORMAT_OPT
+                        + " option. "
+                        + "Specify the directory of source files and a target file; if "
+                        + "not specified, then a default will be used.");
         formatDir.setArgs(2);
 
         // -c
-        Option useConfig = new Option(
-                USE_CONFIG_FILE,
-                false,
-                "Specifies the absolute path to a config file to use.");
+        Option useConfig = new Option(USE_CONFIG_FILE, false,
+                "Specifies the absolute path to a config file to use. " +
+                "eg. -c \"file:/dir/config/configFile\"");
         useConfig.setArgs(1);
-        
+
         // -h
         Option helpOp = new Option(HELP, false, "print program usage");
 
@@ -296,12 +311,14 @@ public class NewsScraperMain {
     }
 
     /*
-     * Initializes configFile. 
+     * Initializes configFile.
+     * 
      * @modifies configFile
-     * @effects if the user has specified a configuration file, configFile is assigned
-     *          its URL; else, configFile is assigned to DEFAULT_CONFIG_FILE.
+     * 
+     * @effects if the user has specified a configuration file, configFile is
+     * assigned its URL; else, configFile is assigned to DEFAULT_CONFIG_FILE.
      */
-    private void fetchConfigFile() {
+    private static void fetchConfigFile(CommandLine cmd) {
         try {
             if (cmd.hasOption(USE_CONFIG_FILE)) {
                 String configFileAbsPath = cmd.getOptionValue(USE_CONFIG_FILE);
@@ -311,8 +328,7 @@ public class NewsScraperMain {
             }
 
         } catch (IOException e) {
-            // TODO: log this w/ backlog
-            e.printStackTrace();
+            logger.error("fetchConfigFile(): error loading config file.");
         }
     }
 
@@ -326,6 +342,7 @@ public class NewsScraperMain {
 
     /**
      * Outputs a help message.
+     * 
      * @modifies nothing
      */
     private static void help(CommandLine cmd) {
