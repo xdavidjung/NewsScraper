@@ -58,7 +58,7 @@ public class ExtractedNewsData extends NewsData {
             
             // "rArg1":"[range of arg1]"
             sb.append("\t\t\t\t\"rArg1\":\"" +
-                    cbe.getArgument1().getRange().toString() + ",\"\n");
+                    cbe.getArgument1().getRange().toString() + "\", \n");
             
             // "relation":"[rel]",
             sb.append("\t\t\t\t\"relation\":\"" +
@@ -67,7 +67,7 @@ public class ExtractedNewsData extends NewsData {
             
             // "rRel":"[range of rel]"
             sb.append("\t\t\t\t\"rArg1\":\"" +
-                    cbe.getRelation().getRange().toString() + ",\"\n");
+                    cbe.getRelation().getRange().toString() + "\", \n");
             
             // "arg2":"[arg2]",
             sb.append("\t\t\t\t\"arg2\":\"" +
@@ -76,7 +76,7 @@ public class ExtractedNewsData extends NewsData {
 
             // "rArg2":"[range of arg2]"
             sb.append("\t\t\t\t\"rArg2\":\"" +
-                    cbe.getArgument2().getRange().toString() + ",\"\n");
+                    cbe.getArgument2().getRange().toString() + "\", \n");
             
             // "confidence":"[confidence]"
             sb.append("\t\t\t\t\"confidence\":\"" + 
