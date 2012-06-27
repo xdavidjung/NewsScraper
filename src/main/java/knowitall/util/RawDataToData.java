@@ -15,7 +15,7 @@ public class RawDataToData {
         
         for(String folderName : folders) {
             YahooRssScraper yrs = new YahooRssScraper(Calendar.getInstance(), 
-                    NewsScraperMain.DEFAULT_CONFIG_FILE);
+                    NewsScraperMain.DEFAULT_CONFIG_URL);
             yrs.scrape(false, true, "yahoo_data/recover/" + folderName + "/raw_data/", "yahoo_data/recover/" + folderName);
         }
     }

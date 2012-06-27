@@ -25,7 +25,7 @@ public class NewsScraperMain {
      * The name of the default local file that stores Config information. This
      * particular config file uses the Yahoo RSS feed.
      */
-    public static final URL DEFAULT_CONFIG_FILE = NewsScraperMain.class
+    public static final URL DEFAULT_CONFIG_URL = NewsScraperMain.class
             .getResource("YahooRssConfig");
 
     private static Logger logger;
@@ -49,7 +49,7 @@ public class NewsScraperMain {
 
     private static Calendar calendar;
     private static Options options;
-    private static URL configFile;
+    private static URL configUrl;
 
     public static void main(String[] args) throws IOException {
         initializeVars();
@@ -89,7 +89,7 @@ public class NewsScraperMain {
      */
     private static void fetchNews(CommandLine cmd) {
 
-        YahooRssScraper yrs = new YahooRssScraper(calendar, configFile);
+        YahooRssScraper yrs = new YahooRssScraper(calendar, configUrl);
 
         // -s
         if (cmd.hasOption(SCRAPE_DATA_ONLY)) {
@@ -116,7 +116,7 @@ public class NewsScraperMain {
      *             if the configuration file cannot be found.
      */
     private static void getExtractions(CommandLine cmd) throws IOException {
-        ReverbNewsExtractor rne = new ReverbNewsExtractor(calendar, configFile);
+        ReverbNewsExtractor rne = new ReverbNewsExtractor(calendar, configUrl);
 
         // -r
         if (cmd.hasOption(USE_REVERB)) {
@@ -183,7 +183,7 @@ public class NewsScraperMain {
             }
 
             ExtractedDataFormatter formatter = new ExtractedDataFormatter(
-                    calendar, DEFAULT_CONFIG_FILE);
+                    calendar, DEFAULT_CONFIG_URL);
             formatter.format(dir, timeInterval, confidenceThreshold, category,
                     formatToday);
 
@@ -322,9 +322,9 @@ public class NewsScraperMain {
         try {
             if (cmd.hasOption(USE_CONFIG_FILE)) {
                 String configFileAbsPath = cmd.getOptionValue(USE_CONFIG_FILE);
-                configFile = new URL(configFileAbsPath);
+                configUrl = new URL(configFileAbsPath);
             } else {
-                configFile = DEFAULT_CONFIG_FILE;
+                configUrl = DEFAULT_CONFIG_URL;
             }
 
         } catch (IOException e) {

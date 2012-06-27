@@ -145,7 +145,7 @@ public class StatisticsGenerator {
     private static void loadConfig() throws IOException {
         Config config = new Config();
         try {
-            config.loadConfig(NewsScraperMain.DEFAULT_CONFIG_FILE);
+            config.loadConfig(NewsScraperMain.DEFAULT_CONFIG_URL);
             categoryList = config.getCategory();
             for(int i = 0; i < dayOfWeek.length; i++){
                 dayOfWeekMap.put(dayOfWeek[i], new DayOfWeekData());
