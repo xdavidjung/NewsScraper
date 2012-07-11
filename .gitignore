@@ -3,3 +3,7 @@ target/
 reverb-overnews-1.0-jar-with-dependencies.jar
 back_up/*
 *~
+*/.classpath
+*/.settings
+*/.project
+*/.swp
