@@ -1,11 +1,12 @@
-package knowitall.util;
+package edu.washington.cs.knowitall.util;
 
 import java.io.File;
 import java.net.URL;
 import java.util.Calendar;
 
-import knowitall.reverbovernews.NewsScraperMain;
-import knowitall.reverbovernews.YahooRssScraper;
+import edu.washington.cs.knowitall.newsscraper.NewsScraperMain;
+import edu.washington.cs.knowitall.newsscraper.YahooRssScraper;
+
 
 public class RawDataToData {
     

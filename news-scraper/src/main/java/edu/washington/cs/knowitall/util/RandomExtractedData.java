@@ -1,4 +1,4 @@
-package knowitall.util;
+package edu.washington.cs.knowitall.util;
 
 import java.io.BufferedWriter;
 import java.io.File;

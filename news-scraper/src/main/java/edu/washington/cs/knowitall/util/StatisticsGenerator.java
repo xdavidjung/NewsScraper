@@ -1,4 +1,4 @@
-package knowitall.util;
+package edu.washington.cs.knowitall.util;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -30,9 +30,10 @@ import org.json.JSONObject;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import knowitall.reverbovernews.Config;
-import knowitall.reverbovernews.ExtractedNewsData;
-import knowitall.reverbovernews.NewsScraperMain;
+import edu.washington.cs.knowitall.newsscraper.Config;
+import edu.washington.cs.knowitall.newsscraper.ExtractedNewsData;
+import edu.washington.cs.knowitall.newsscraper.NewsScraperMain;
+
 
 public class StatisticsGenerator {
     
