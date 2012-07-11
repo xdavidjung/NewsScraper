@@ -77,7 +77,7 @@
   <build>
     <resources>
       <resource>
-        <targetPath>knowitall/newsscraper</targetPath>
+        <targetPath>edu/washington/cs/knowitall/newsscraper</targetPath>
         <filtering>false</filtering>
         <directory>${basedir}/src/main/java/edu/washington/cs/knowitall/newsscraper</directory>
         <includes>
