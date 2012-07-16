@@ -66,7 +66,7 @@ public class ExtractedNewsData extends NewsData {
                     "\", \n");
             
             // "rRel":"[range of rel]"
-            sb.append("\t\t\t\t\"rArg1\":\"" +
+            sb.append("\t\t\t\t\"rRel\":\"" +
                     cbe.getRelation().getRange().toString() + "\", \n");
             
             // "arg2":"[arg2]",
