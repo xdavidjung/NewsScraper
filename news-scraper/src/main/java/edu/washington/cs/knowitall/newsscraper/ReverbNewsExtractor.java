@@ -21,10 +21,16 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import edu.washington.cs.knowitall.extractor.ReVerbExtractor;
+import edu.washington.cs.knowitall.nlp.ChunkedSentence;
 import edu.washington.cs.knowitall.nlp.OpenNlpSentenceChunker;
-import edu.washington.cs.knowitall.nlp.extraction.ChunkedBinaryExtraction;
 import edu.washington.cs.knowitall.util.DefaultObjects;
 
+/**
+ * This class gets ReVerb extractions from news datum and then outputs
+ * JSON files containing the extraction data. 
+ * 
+ * @author Pingyang He, David Jung
+ */
 public class ReverbNewsExtractor {
 
     // private final String TARGET_DIR = "reverb_extracted";
@@ -38,10 +44,9 @@ public class ReverbNewsExtractor {
     private String extractedDataSuffix;
     private String extractedDataDir;
     private Calendar calendar;
-    private ReVerbExtractor reverb;
-    // private ReVerbRelationExtractor reverb;
     private Map<Long, ExtractedNewsData> data;
     private OpenNlpSentenceChunker chunker;
+    private ReVerbExtractor reverb;
     // this will be true when user are not extracting data for today's data
     private boolean ignoreDate;
 
@@ -54,7 +59,8 @@ public class ReverbNewsExtractor {
      */
     public ReverbNewsExtractor(Calendar calendar, URL configFileName) {
         logger = LoggerFactory.getLogger(ReverbNewsExtractor.class);
-                
+        
+        reverb = new ReVerbExtractor();
         this.calendar = calendar;
         if (configFileName != null) {
             this.configFileName = configFileName;
@@ -62,7 +68,6 @@ public class ReverbNewsExtractor {
             this.configFileName = this.getClass().getResource("YahooRSSConfig");
         }
         ignoreDate = false;
-        reverb = new ReVerbExtractor();
         data = new HashMap<Long, ExtractedNewsData>();
         try {
             chunker = new OpenNlpSentenceChunker();
@@ -114,7 +119,7 @@ public class ReverbNewsExtractor {
 
             // start outputting data
             if (targetDir == null) {
-                outputData(rootDir + "/" + extractedDataDir + "/");
+                outputData(extractedDataDir + "/");
             } else {
                 ignoreDate = true;
                 dateString = fileName.substring(0, 10);
@@ -143,7 +148,7 @@ public class ReverbNewsExtractor {
                     .next();
             ExtractedNewsData currentData = (ExtractedNewsData) pairs
                     .getValue();
-            currentData.extractions = new HashMap<String, ChunkedBinaryExtraction>();
+            currentData.extractions = new HashMap<String, ChunkedSentence>();
             reverbExtract(currentData, currentData.imgAlt);
             reverbExtract(currentData, currentData.imgTitle);
             reverbExtract(currentData, currentData.content);
@@ -205,7 +210,7 @@ public class ReverbNewsExtractor {
             Map.Entry<Long, ExtractedNewsData> pair = (Map.Entry<Long, ExtractedNewsData>) it
                     .next();
             sb.append("\"" + pair.getKey() + "\": "
-                    + pair.getValue().toJsonString() + seperator);
+                    + pair.getValue().toJsonString(reverb) + seperator);
         }
 
         if (!empty)
@@ -231,10 +236,17 @@ public class ReverbNewsExtractor {
                         .getDefaultSentenceDetector().sentDetect(str);
 
                 for (String sent : sentences) {
+                    currentData.extractions.put(sent, chunker.chunkSentence(sent));
+                    /* TODO
+                    ChunkedSentence chunked = chunker.chunkSentence(sent);
+                    chunked.getChunkTagsAsString();
+                    chunked.getOffsetsAsString();
+                    chunked.getPosTagsAsString();
                     for (ChunkedBinaryExtraction extr : reverb.extract(chunker
                             .chunkSentence(sent))) {
-                        currentData.extractions.put(sent.toString(), extr);
+                        currentData.extractions.put(sent.toString(), chunker.chunkSentence(sent));
                     }
+                    */
                 }
             } catch (IOException e) {
                 e.printStackTrace();

@@ -103,9 +103,6 @@ public class NewsScraperMain {
         } else if (cmd.hasOption(PROCESS_RSS_WITH_GIVEN_DIR)) {
             String[] dirs = cmd.getOptionValues(PROCESS_RSS_WITH_GIVEN_DIR);
             yrs.scrape(false, true, dirs[0], dirs[1]);
-
-        } else {
-            printUsage();
         }
     }
 

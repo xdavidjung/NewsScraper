@@ -78,22 +78,27 @@ public class NewsData {
         StringBuilder sb = new StringBuilder();
         Field[] fields = this.getClass().getFields();
         String seperator = ", ";
-        try {
-            for (Field field : fields) {
-                String fieldName = field.getName();
-                if (!fieldName.equals("extractions")) {
-                    sb.append("\"" + field.getName() + "\"");
-                    sb.append(":");
-                    sb.append("\""
-                            + field.get(this).toString().replace("\"", "\\\"")
-                            + "\"");
-                    sb.append(seperator);
+        
+        for (Field field : fields) {
+            String fieldName = field.getName();
+            if (!fieldName.equals("extractions")) {
+                sb.append("\"" + field.getName() + "\"");
+                sb.append(":");
+                String fieldVal = null;
+                try {
+                    fieldVal = field.get(this).toString();
+                } catch (IllegalArgumentException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (NullPointerException e) {
+                    fieldVal = "";
                 }
+                sb.append("\""
+                        + fieldVal.replace("\"", "\\\"")
+                        + "\"");
+                sb.append(seperator);
             }
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
         }
         // fence-post problem
         sb.delete(sb.length() - seperator.length(), sb.length());
