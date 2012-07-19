@@ -6,6 +6,11 @@
   <artifactId>news-converter</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
+  <parent>
+    <groupId>edu.washington.cs.knowitall</groupId>
+    <artifactId>knowitall</artifactId>
+    <version>2.1.1</version>
+  </parent>
 
   <name>news-converter</name>
   <url>http://maven.apache.org</url>
@@ -14,17 +19,74 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
+  <repositories>
+    <!-- for jerkson -->
+    <repository>
+      <id>repo.codahale.com</id>
+      <url>http://repo.codahale.com</url>
+    </repository>
+    <repository>
+      <id>knowitall</id>
+      <url>http://knowitall.cs.washington.edu/maven2</url>
+    </repository>
+    <repository>
+      <id>knowitall-snapshot</id>
+      <url>http://knowitall.cs.washington.edu/maven2-snapshot</url>
+    </repository>
+  </repositories>
+
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>3.8.1</version>
-      <scope>test</scope>
+      <scope>test</scope>   
     </dependency>
+    <!-- to get to ReVerbExtraction -->
+    <dependency>
+      <groupId>edu.washington.cs.knowitall</groupId>
+      <artifactId>openiedemo-backend</artifactId>
+      <version>1.0.1-SNAPSHOT</version>
+    </dependency>
+    <!-- jerkson -->
+    <dependency>
+      <groupId>com.codahale</groupId>
+      <artifactId>jerkson_2.9.1</artifactId>
+      <version>0.5.0</version>
+    </dependency>
+    <!-- chunker -->
     <dependency>
       <groupId>edu.washington.cs.knowitall.nlptools</groupId>
       <artifactId>nlptools-chunk-opennlp_2.9.2</artifactId>
       <version>2.2.0</version>
     </dependency>
   </dependencies>
+  
+  <build>
+    <sourceDirectory>src/main/scala</sourceDirectory>
+    <testSourceDirectory>src/test/scala</testSourceDirectory>
+    <plugins>
+      <!-- scala maven plugin -->
+      <plugin>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>3.0.2</version>
+      </plugin>
+      <!-- Used for creating a single executable fat jar -->
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.3</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>edu.washington.cs.knowitall.newsconverter.ConverterMain</mainClass>
+            </manifest>
+          </archive>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
