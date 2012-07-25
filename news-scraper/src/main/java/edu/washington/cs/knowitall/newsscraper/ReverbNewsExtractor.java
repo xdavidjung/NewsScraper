@@ -47,8 +47,6 @@ public class ReverbNewsExtractor {
     private Map<Long, ExtractedNewsData> data;
     private OpenNlpSentenceChunker chunker;
     private ReVerbExtractor reverb;
-    // this will be true when user are not extracting data for today's data
-    private boolean ignoreDate;
 
     /**
      * @param calendar
@@ -67,7 +65,6 @@ public class ReverbNewsExtractor {
         } else {
             this.configFileName = this.getClass().getResource("YahooRSSConfig");
         }
-        ignoreDate = false;
         data = new HashMap<Long, ExtractedNewsData>();
         try {
             chunker = new OpenNlpSentenceChunker();
@@ -121,7 +118,6 @@ public class ReverbNewsExtractor {
             if (targetDir == null) {
                 outputData(extractedDataDir + "/");
             } else {
-                ignoreDate = true;
                 dateString = fileName.substring(0, 10);
                 if (!targetDir.endsWith("/"))
                     targetDir += "/";
@@ -201,7 +197,7 @@ public class ReverbNewsExtractor {
 
         // create JSON output string manually
         StringBuilder sb = new StringBuilder();
-        sb.append("{");
+        sb.append("[");
         String seperator = ", ";
         boolean empty = true;
 
@@ -209,13 +205,12 @@ public class ReverbNewsExtractor {
             empty = false;
             Map.Entry<Long, ExtractedNewsData> pair = (Map.Entry<Long, ExtractedNewsData>) it
                     .next();
-            sb.append("\"" + pair.getKey() + "\": "
-                    + pair.getValue().toJsonString(reverb) + seperator);
+            sb.append(pair.getValue().toJsonString(reverb) + seperator);
         }
 
         if (!empty)
             sb.delete(sb.length() - seperator.length(), sb.length());
-        sb.append("}");
+        sb.append("]");
         try {
             out.write(sb.toString());
             out.close();
@@ -237,16 +232,6 @@ public class ReverbNewsExtractor {
 
                 for (String sent : sentences) {
                     currentData.extractions.put(sent, chunker.chunkSentence(sent));
-                    /* TODO
-                    ChunkedSentence chunked = chunker.chunkSentence(sent);
-                    chunked.getChunkTagsAsString();
-                    chunked.getOffsetsAsString();
-                    chunked.getPosTagsAsString();
-                    for (ChunkedBinaryExtraction extr : reverb.extract(chunker
-                            .chunkSentence(sent))) {
-                        currentData.extractions.put(sent.toString(), chunker.chunkSentence(sent));
-                    }
-                    */
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -260,18 +245,22 @@ public class ReverbNewsExtractor {
     private String loadData(String location) {
         logger.info("loadData(): Loading data from: {}", location);
         StringBuilder sb = new StringBuilder();
+        File dataFile = new File(location);
         Scanner sc = null;
+        
         try {
-            sc = new Scanner(new File(location), ENCODE);
+            sc = new Scanner(dataFile, ENCODE);
+            
             while (sc.hasNextLine())
                 sb.append(sc.nextLine());
             
         } catch (FileNotFoundException e) {
             logger.error("loadData(): Unable to load data.");
             logger.error("{}", e);
-        } finally {
-            sc.close();
         }
+        
+        if (sc != null) sc.close();
+        
         return sb.toString();
     }
 
