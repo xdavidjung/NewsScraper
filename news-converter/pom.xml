@@ -2,15 +2,14 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>knowitall</groupId>
-  <artifactId>news-converter</artifactId>
-  <version>1.0-SNAPSHOT</version>
-  <packaging>jar</packaging>
   <parent>
     <groupId>edu.washington.cs.knowitall</groupId>
     <artifactId>knowitall</artifactId>
     <version>2.1.1</version>
   </parent>
+  <artifactId>news-converter</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
 
   <name>news-converter</name>
   <url>http://maven.apache.org</url>
@@ -20,11 +19,6 @@
   </properties>
 
   <repositories>
-    <!-- for jerkson -->
-    <repository>
-      <id>repo.codahale.com</id>
-      <url>http://repo.codahale.com</url>
-    </repository>
     <repository>
       <id>knowitall</id>
       <url>http://knowitall.cs.washington.edu/maven2</url>
@@ -48,17 +42,11 @@
       <artifactId>openiedemo-backend</artifactId>
       <version>1.0.1-SNAPSHOT</version>
     </dependency>
-    <!-- jerkson -->
+    <!-- lift-json -->
     <dependency>
-      <groupId>com.codahale</groupId>
-      <artifactId>jerkson_2.9.1</artifactId>
-      <version>0.5.0</version>
-    </dependency>
-    <!-- chunker -->
-    <dependency>
-      <groupId>edu.washington.cs.knowitall.nlptools</groupId>
-      <artifactId>nlptools-chunk-opennlp_2.9.2</artifactId>
-      <version>2.2.0</version>
+      <groupId>net.liftweb</groupId>
+      <artifactId>lift-json_2.9.1</artifactId>
+      <version>2.4</version>
     </dependency>
   </dependencies>
   
@@ -71,8 +59,15 @@
         <groupId>net.alchim31.maven</groupId>
         <artifactId>scala-maven-plugin</artifactId>
         <version>3.0.2</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
-      <!-- Used for creating a single executable fat jar -->
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <version>2.3</version>
