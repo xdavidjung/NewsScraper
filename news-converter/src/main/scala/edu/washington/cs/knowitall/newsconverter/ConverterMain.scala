@@ -49,7 +49,7 @@ object ConverterMain {
             getInterval(ext.rRel),
             getInterval(ext.rArg2),
             url)
-          println(ReVerbExtraction.toTabDelimited(re))
+          println(ReVerbExtraction.serializeToString(re))
         })
       })
     } getOrElse {
