@@ -25,12 +25,12 @@ object ConverterMain {
                       else getJson
       
       // for each news data, look at the extractions
-      val extrs = newsDatum.flatMap(newsData => {
+      val extrs = newsDatum.foreach(newsData => {
         val extractions = newsData.extractions
         val url = newsData.url
         
         // for each extraction, build the ReVerbExtraction object and output it.
-        extractions.map(ext => {
+        extractions.foreach(ext => {
           val chunkTags = ext.chunkTags.split(" ").iterator
           val posTags = ext.posTags.split(" ").iterator
           val sent = tokenizer.tokenize(ext.sent).map(_.string)
@@ -53,7 +53,7 @@ object ConverterMain {
             getInterval(ext.rRel),
             getInterval(ext.rArg2),
             url)
-          re//ReVerbExtraction.serializeToString(re)
+          println(ReVerbExtraction.serializeToString(re))
         })
       })
     } getOrElse {
