@@ -3,6 +3,7 @@ package edu.washington.cs.knowitall.newsconverter;
 import edu.washington.cs.knowitall.browser.extraction.ReVerbExtraction
 import edu.washington.cs.knowitall.collection.immutable.Interval
 import edu.washington.cs.knowitall.tool.chunk.ChunkedToken
+import edu.washington.cs.knowitall.tool.tokenize.OpenNlpTokenizer
 
 import net.liftweb.json._
 
@@ -11,6 +12,9 @@ import scala.io.Source
 import java.io.File
 
 object ConverterMain {
+  
+  val tokenizerLocal = new java.lang.ThreadLocal[OpenNlpTokenizer]() { override def initialValue = new OpenNlpTokenizer }
+  def tokenizer = tokenizerLocal.get
   
   def main(args: Array[String]): Unit = {
     
@@ -21,15 +25,15 @@ object ConverterMain {
                       else getJson
       
       // for each news data, look at the extractions
-      newsDatum.foreach(newsData => {
+      val extrs = newsDatum.flatMap(newsData => {
         val extractions = newsData.extractions
         val url = newsData.url
         
         // for each extraction, build the ReVerbExtraction object and output it.
-        extractions.foreach(ext => {
+        extractions.map(ext => {
           val chunkTags = ext.chunkTags.split(" ").iterator
           val posTags = ext.posTags.split(" ").iterator
-          val sent = ext.sent.split(" ")
+          val sent = tokenizer.tokenize(ext.sent).map(_.string)
           val sentIterator = sent.iterator
           val offsets = ext.offsets.split("\\) \\[").map(getOffset).iterator
           
@@ -49,7 +53,7 @@ object ConverterMain {
             getInterval(ext.rRel),
             getInterval(ext.rArg2),
             url)
-          println(ReVerbExtraction.serializeToString(re))
+          re//ReVerbExtraction.serializeToString(re)
         })
       })
     } getOrElse {
