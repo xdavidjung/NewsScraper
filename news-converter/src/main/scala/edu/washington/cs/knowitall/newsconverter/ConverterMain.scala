@@ -138,7 +138,7 @@ object ConverterMain {
     * The input must be the lines of a json file in the appropriate format.
     */
   def getJson: List[NewsData] = {
-    val source = Source.stdin
+    val source = Source.fromInputStream(System.in, "UTF-8")
     val jsonString = source.getLines.mkString
     
     source.close()
@@ -153,7 +153,7 @@ object ConverterMain {
    * The lines from stdin must form a json file in the appropriate format. 
    */
   def readJson(file: File): List[NewsData] = {
-    val source = Source.fromFile(file)
+    val source = Source.fromFile(file, "UTF-8")
     val jsonString = source.getLines.mkString
     source.close()
     
