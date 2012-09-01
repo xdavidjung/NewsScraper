@@ -38,11 +38,11 @@ import com.google.gson.JsonObject;
 /**
  * This class fetches the RSS data from Yahoo and stores the metadata to the
  * database.
- * 
+ *
  * @author Pingyang He, David H Jung
- * 
+ *
  */
-public class YahooRssScraper {
+public class YahooRssScraper implements RssScraper {
 
     private Logger logger;
 
@@ -80,7 +80,7 @@ public class YahooRssScraper {
 
     /**
      * constructor
-     * 
+     *
      * @param calendar
      *            Today's date
      * @param configFile
@@ -98,19 +98,7 @@ public class YahooRssScraper {
         dataMap = new HashMap<String, NewsData>();
     }
 
-    /**
-     * 
-     * @param fetchData
-     *            Whether to fetch data from the RSS.
-     * @param processData
-     *            Whether to process and store fetched data.
-     * @param sourceDir
-     *            Where to store the scraped HTML data.
-     * @param targetDir
-     *            Where to store the process data.
-     */
-    public void scrape(boolean fetchData, boolean processData,
-            String sourceDir, String targetDir) {
+    public void scrape(boolean fetchData, boolean processData, String sourceDir, String targetDir) {
 
         if (sourceDir != null && targetDir != null)
             ignoreDate = true;
@@ -144,7 +132,7 @@ public class YahooRssScraper {
     }
 
     /*
-     * Fetch the online news data.
+     * Fetch the online news data and store it.
      */
     private void fetchData() {
         logger.info("fetchData(): Start fetching data.");
@@ -430,7 +418,7 @@ public class YahooRssScraper {
 
     /*
      * Given a String that follows a certain format, returns a substring from
-     * it that contains a date. 
+     * it that contains a date.
      */
     private String getFileDate(String fileName) {
         try {
@@ -517,7 +505,7 @@ public class YahooRssScraper {
     /*
      * Gets rid of useless information in a paragraph. Text is useless if it
      * ends in the USELESS_CONTENT_INDICATOR.
-     * 
+     *
      * @return the argument String sans useless information; if the whole
      * argument String is useless, returns null.
      */
