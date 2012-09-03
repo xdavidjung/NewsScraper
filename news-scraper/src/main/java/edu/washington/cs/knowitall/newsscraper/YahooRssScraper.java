@@ -27,7 +27,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,9 +37,9 @@ import com.google.gson.JsonObject;
 /**
  * This class fetches the RSS data from Yahoo and stores the metadata to the
  * database.
- * 
+ *
  * @author Pingyang He, David H Jung
- * 
+ *
  */
 public class YahooRssScraper {
 
@@ -59,8 +58,7 @@ public class YahooRssScraper {
     private final String LINK_GARBAGE_TAIL = "\n";
     private final String GARBAGE_TAIL = "...";
     private final String USELESS_CONTENT_INDICATOR = "[...]";
-    private final String[] ENDING_PUNCTUATION = { ".", "?", "!", ".\"", "?\"",
-            "!\"" };
+    private final String[] ENDING_PUNCTUATION = { ".", "?", "!", ".\"", "?\"", "!\"" };
     private final String ENCODE = "UTF-8";
     private final String FOLDER_PATH_SEPERATOR = "/";
 
@@ -80,7 +78,7 @@ public class YahooRssScraper {
 
     /**
      * constructor
-     * 
+     *
      * @param calendar
      *            Today's date
      * @param configFile
@@ -99,7 +97,7 @@ public class YahooRssScraper {
     }
 
     /**
-     * 
+     *
      * @param fetchData
      *            Whether to fetch data from the RSS.
      * @param processData
@@ -320,8 +318,8 @@ public class YahooRssScraper {
 
                             getImageUrl(item, data);
 
-                            if (para == null) {// description has no child tag
-                                               // "p"
+                            // description has no child tag
+                            if (para == null) {
 
                                 // length check
                                 String descText = desc.text().trim();
@@ -357,16 +355,14 @@ public class YahooRssScraper {
                                         data.imgUrl = img.attr("src");
                                     String imgAlt = img.attr("alt").trim();
                                     if (imgAlt.length() > sentenceMinimumLengthRequirement
-                                            && !duplicateChecker
-                                                    .contains(imgAlt)) {
+                                            && !duplicateChecker.contains(imgAlt)) {
                                         data.imgAlt = imgAlt;
                                         duplicateChecker.add(imgAlt);
                                     }
 
                                     String imgTitle = img.attr("title");
                                     if (imgTitle.length() > sentenceMinimumLengthRequirement
-                                            && !duplicateChecker
-                                                    .contains(imgTitle)) {
+                                            && !duplicateChecker.contains(imgTitle)) {
                                         data.imgTitle = img.attr("title");
                                         duplicateChecker.add(imgTitle);
                                     }
@@ -429,8 +425,8 @@ public class YahooRssScraper {
     }
 
     /*
-     * Given a String that follows a certain format, returns a substring from
-     * it that contains a date. 
+     * Given a String that follows a certain format,
+     * returns a substring from it that contains a date.
      */
     private String getFileDate(String fileName) {
         try {
@@ -517,7 +513,7 @@ public class YahooRssScraper {
     /*
      * Gets rid of useless information in a paragraph. Text is useless if it
      * ends in the USELESS_CONTENT_INDICATOR.
-     * 
+     *
      * @return the argument String sans useless information; if the whole
      * argument String is useless, returns null.
      */
@@ -586,7 +582,7 @@ public class YahooRssScraper {
                 .getAsJsonArray();
         for (int i = 0; i < categoryJA.size(); i++) {
             rssCategoryList
-                    .add(new RssCategory(categoryJA.get(i).getAsString()));
+            .add(new RssCategory(categoryJA.get(i).getAsString()));
         }
 
         // load rsslist
