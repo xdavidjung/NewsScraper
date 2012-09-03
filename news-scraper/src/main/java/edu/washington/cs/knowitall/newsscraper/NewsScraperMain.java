@@ -11,12 +11,12 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is used to scrape news from the internet from the command line.
- * 
+ *
  * @author Pingyang He, David H Jung
  */
 public class NewsScraperMain {
@@ -71,7 +71,7 @@ public class NewsScraperMain {
 
     /**
      * Initialize variables for this object.
-     * 
+     *
      * @mofidies calendar, options.
      * @effects initializes them.
      */
@@ -83,7 +83,7 @@ public class NewsScraperMain {
 
     /**
      * Fetch news data from the RSS.
-     * 
+     *
      * @param cmd
      *            CommandLine object containing the commands/options data.
      */
@@ -108,7 +108,7 @@ public class NewsScraperMain {
 
     /**
      * Pulls out extractions from the news data using ReVerb.
-     * 
+     *
      * @throws IOException
      *             if the configuration file cannot be found.
      */
@@ -119,7 +119,7 @@ public class NewsScraperMain {
         if (cmd.hasOption(USE_REVERB)) {
             rne.extract(null, null);
 
-            // -rd
+        // -rd
         } else if (cmd.hasOption(USE_REVERB_WITH_DIR)) {
             String[] dirs = cmd.getOptionValues(USE_REVERB_WITH_DIR);
             if (dirs != null && dirs.length == 2) {
@@ -133,7 +133,7 @@ public class NewsScraperMain {
 
     /**
      * Format the stored data - called when the user uses the -fmt option.
-     * 
+     *
      * @throws IOException
      *             if the configuration file cannot be found.
      */
@@ -309,9 +309,9 @@ public class NewsScraperMain {
 
     /*
      * Initializes configFile.
-     * 
+     *
      * @modifies configFile
-     * 
+     *
      * @effects if the user has specified a configuration file, configFile is
      * assigned its URL; else, configFile is assigned to DEFAULT_CONFIG_FILE.
      */
@@ -339,7 +339,7 @@ public class NewsScraperMain {
 
     /**
      * Outputs a help message.
-     * 
+     *
      * @modifies nothing
      */
     private static void help(CommandLine cmd) {
