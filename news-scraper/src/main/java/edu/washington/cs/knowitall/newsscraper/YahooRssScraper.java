@@ -27,7 +27,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,8 +58,7 @@ public class YahooRssScraper implements RssScraper {
     private final String LINK_GARBAGE_TAIL = "\n";
     private final String GARBAGE_TAIL = "...";
     private final String USELESS_CONTENT_INDICATOR = "[...]";
-    private final String[] ENDING_PUNCTUATION = { ".", "?", "!", ".\"", "?\"",
-            "!\"" };
+    private final String[] ENDING_PUNCTUATION = { ".", "?", "!", ".\"", "?\"", "!\"" };
     private final String ENCODE = "UTF-8";
     private final String FOLDER_PATH_SEPERATOR = "/";
 
@@ -308,8 +306,8 @@ public class YahooRssScraper implements RssScraper {
 
                             getImageUrl(item, data);
 
-                            if (para == null) {// description has no child tag
-                                               // "p"
+                            // description has no child tag
+                            if (para == null) {
 
                                 // length check
                                 String descText = desc.text().trim();
@@ -345,16 +343,14 @@ public class YahooRssScraper implements RssScraper {
                                         data.imgUrl = img.attr("src");
                                     String imgAlt = img.attr("alt").trim();
                                     if (imgAlt.length() > sentenceMinimumLengthRequirement
-                                            && !duplicateChecker
-                                                    .contains(imgAlt)) {
+                                            && !duplicateChecker.contains(imgAlt)) {
                                         data.imgAlt = imgAlt;
                                         duplicateChecker.add(imgAlt);
                                     }
 
                                     String imgTitle = img.attr("title");
                                     if (imgTitle.length() > sentenceMinimumLengthRequirement
-                                            && !duplicateChecker
-                                                    .contains(imgTitle)) {
+                                            && !duplicateChecker.contains(imgTitle)) {
                                         data.imgTitle = img.attr("title");
                                         duplicateChecker.add(imgTitle);
                                     }
@@ -417,8 +413,8 @@ public class YahooRssScraper implements RssScraper {
     }
 
     /*
-     * Given a String that follows a certain format, returns a substring from
-     * it that contains a date.
+     * Given a String that follows a certain format,
+     * returns a substring from it that contains a date.
      */
     private String getFileDate(String fileName) {
         try {
@@ -574,7 +570,7 @@ public class YahooRssScraper implements RssScraper {
                 .getAsJsonArray();
         for (int i = 0; i < categoryJA.size(); i++) {
             rssCategoryList
-                    .add(new RssCategory(categoryJA.get(i).getAsString()));
+            .add(new RssCategory(categoryJA.get(i).getAsString()));
         }
 
         // load rsslist

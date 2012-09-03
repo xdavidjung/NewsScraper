@@ -11,8 +11,8 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is used to scrape news from the internet from the command line.
@@ -123,7 +123,7 @@ public class NewsScraperMain {
         if (cmd.hasOption(USE_REVERB)) {
             rne.extract(null, null);
 
-            // -rd
+        // -rd
         } else if (cmd.hasOption(USE_REVERB_WITH_DIR)) {
             String[] dirs = cmd.getOptionValues(USE_REVERB_WITH_DIR);
             if (dirs != null && dirs.length == 2) {

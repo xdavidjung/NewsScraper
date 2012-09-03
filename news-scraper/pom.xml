@@ -43,7 +43,6 @@
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpcore</artifactId>
       <version>4.2.1</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <!-- jsoup HTML parser library @ http://jsoup.org/ -->
@@ -54,7 +53,7 @@
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
-      <version>2.2.1</version>
+      <version>2.2.2</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -96,6 +95,7 @@
     </resources>
 
     <plugins>
+    <!-- don't know what this is for
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -104,6 +104,7 @@
           <target>1.5</target>
         </configuration>
       </plugin>
+    -->
       <!-- Used for creating a single executable fat jar -->
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
