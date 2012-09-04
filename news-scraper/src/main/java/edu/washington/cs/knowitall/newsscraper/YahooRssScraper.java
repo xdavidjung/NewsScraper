@@ -30,8 +30,8 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 /**
@@ -41,14 +41,10 @@ import com.google.gson.JsonObject;
  * @author Pingyang He, David H Jung
  *
  */
-public class YahooRssScraper implements RssScraper {
+public class YahooRssScraper extends RssScraper {
 
     private Logger logger;
 
-    private final String JSON_BASE_URL = "rss-url";
-    private final String JSON_CATEGORY_LIST = "category";
-    private final String JSON_RSS_LIST = "rss-list";
-    private final String JSON_SENTENCE_MINIMUM_LENGTH_REQUIREMENT = "sentence-minimum-length";
     private final String ID_COUNT_FILE_NAME = "idCount";
     private final String OUTPUT_DATABASE_NAME = "yahoo_rss.data";
     private final String TAG_LINK = "<link />";
@@ -62,23 +58,25 @@ public class YahooRssScraper implements RssScraper {
     private final String ENCODE = "UTF-8";
     private final String FOLDER_PATH_SEPERATOR = "/";
 
-    private URL configFile;
-    private JsonObject configJO;
+    private URL configUrl;
     private Calendar calendar;
     private String dateString;
     private String baseURL;
-    private List<RssCategory> rssCategoryList;
+
+    /** List of all the categories from the config file. */
+    private List<String> categories;
+
+    /** Mapping from a category name to a list of its RSS feeds. */
+    private Map<String, List<String>> rssCategoryToFeeds;
     private String outputLocation;
     private String rawDataDir;
     private Map<String, NewsData> dataMap;
-    private int sentenceMinimumLengthRequirement;
+    private int sentenceMinimumLength;
     private Set<String> duplicateChecker;
     private boolean ignoreDate;
     private DateFormat dateFormat;
 
     /**
-     * constructor
-     *
      * @param calendar
      *            Today's date
      * @param configFile
@@ -87,13 +85,49 @@ public class YahooRssScraper implements RssScraper {
     public YahooRssScraper(Calendar calendar, URL configFile) {
 
         this.calendar = calendar;
-        this.configFile = configFile;
+        this.configUrl = configFile;
         logger = LoggerFactory.getLogger(YahooRssScraper.class);
 
-        rssCategoryList = new ArrayList<RssCategory>();
+        rssCategoryToFeeds = new HashMap<String, List<String>>();
         duplicateChecker = new HashSet<String>();
         ignoreDate = false;
         dataMap = new HashMap<String, NewsData>();
+    }
+
+
+    /* Load the configuration file and set up the appropriate vars.
+     * @modifies dateFormat, dateString, baseURl, rssCategoryList,
+     *           sentenceMinimumLength, rawDataDir
+     */
+    private void setupConfig() {
+        logger.info("setupConfig(): Loading configuration file.");
+
+        Config config = new Config(configUrl);
+
+        if (!ignoreDate)
+            makeDailyDirectory(config.getRootDir());
+
+        dateFormat = config.getDateFormat();
+        dateString = dateFormat.format(calendar.getTime());
+        baseURL = config.getBaseUrl();
+
+        categories = config.getCategories();
+        for (String category: categories) {
+            rssCategoryToFeeds.put(category, new ArrayList<String>());
+        }
+
+        JsonObject rssList = config.getJsonFeeds();
+        for (String category: categories) {
+            List<String> feedsToFill = rssCategoryToFeeds.get(category);
+            JsonArray feedSource = rssList.get(category).getAsJsonArray();
+
+            for (JsonElement feed: feedSource) {
+                feedsToFill.add(feed.getAsString());
+            }
+        }
+        sentenceMinimumLength = config.getSentenceMinimumLength();
+        rawDataDir = outputLocation + "raw_data/";
+
     }
 
     public void scrape(boolean fetchData, boolean processData, String sourceDir, String targetDir) {
@@ -101,7 +135,7 @@ public class YahooRssScraper implements RssScraper {
         if (sourceDir != null && targetDir != null)
             ignoreDate = true;
 
-        loadConfig();
+        setupConfig();
 
         if (fetchData)
             fetchData();
@@ -137,29 +171,29 @@ public class YahooRssScraper implements RssScraper {
 
         File rawDir = new File(rawDataDir);
         rawDir.mkdirs();
-        for (int i = 0; i < rssCategoryList.size(); i++) {
-            RssCategory rCat = rssCategoryList.get(i);
-            for (int j = 0; j < rCat.rssList.length; j++) {
-                String rssName = rCat.rssList[j];
+
+        for (String categoryName: categories) {
+            List<String> feeds = rssCategoryToFeeds.get(categoryName);
+            for (String feedName: feeds) {
                 try {
-                    Document doc = Jsoup.connect(baseURL + rssName).get();
+                    Document doc = Jsoup.connect(baseURL + feedName).get();
 
                     // write fetched xml to local data
                     BufferedWriter out = new BufferedWriter(
                             new OutputStreamWriter(new FileOutputStream(
                                     new File(rawDataDir + dateString + "_"
-                                            + rCat.categoryName + "_" + rssName
+                                            + categoryName + "_" + feedName
                                             + ".html"), true), ENCODE));
                     out.write(doc.toString());
                     out.close();
 
                     logger.info(
                             "fetchData(): " + "Fetched {}: {} successfully",
-                            rCat.categoryName, rssName);
+                            categoryName, feedName);
 
                 } catch (IOException e) {
                     logger.error("fetchData(): " + "Failed to download: {}_{}",
-                            rCat.categoryName, rssName);
+                            categoryName, feedName);
                     e.printStackTrace();
                 }
             }
@@ -208,7 +242,7 @@ public class YahooRssScraper implements RssScraper {
                 sb.append("\"" + currentCount++ + "\": "
                         + dataMap.get(title).toJsonString() + seperator);
             }
-            // fense post problem
+            // fence post problem
             if (!dataMap.isEmpty())
                 sb.delete(sb.length() - seperator.length(), sb.length());
 
@@ -314,7 +348,7 @@ public class YahooRssScraper implements RssScraper {
                                 descText = fixContent(descText);
                                 if (descText == null)
                                     continue;
-                                if (descText.length() > sentenceMinimumLengthRequirement
+                                if (descText.length() > sentenceMinimumLength
                                         && !duplicateChecker.contains(descText)) {
                                     duplicateChecker.add(descText);
                                     data.content = descText;
@@ -324,7 +358,7 @@ public class YahooRssScraper implements RssScraper {
 
                                 // length check
                                 String paraText = para.text().trim();
-                                if (paraText.length() > sentenceMinimumLengthRequirement) {
+                                if (paraText.length() > sentenceMinimumLength) {
                                     paraText = fixContent(paraText);
                                     if (paraText == null)
                                         continue;
@@ -342,14 +376,14 @@ public class YahooRssScraper implements RssScraper {
                                     if (data.imgUrl.length() < 1)
                                         data.imgUrl = img.attr("src");
                                     String imgAlt = img.attr("alt").trim();
-                                    if (imgAlt.length() > sentenceMinimumLengthRequirement
+                                    if (imgAlt.length() > sentenceMinimumLength
                                             && !duplicateChecker.contains(imgAlt)) {
                                         data.imgAlt = imgAlt;
                                         duplicateChecker.add(imgAlt);
                                     }
 
                                     String imgTitle = img.attr("title");
-                                    if (imgTitle.length() > sentenceMinimumLengthRequirement
+                                    if (imgTitle.length() > sentenceMinimumLength
                                             && !duplicateChecker.contains(imgTitle)) {
                                         data.imgTitle = img.attr("title");
                                         duplicateChecker.add(imgTitle);
@@ -534,60 +568,6 @@ public class YahooRssScraper implements RssScraper {
     }
 
     /*
-     * read the yahoo configuration file and load it
-     */
-    private void loadConfig() {
-        logger.info("loadConfig(): Loading configuration file.");
-
-        Config config = new Config();
-
-        try {
-            config.loadConfig(configFile);
-        } catch (IOException e) {
-            logger.error("loadConfig(): failed to load config file.");
-            e.printStackTrace();
-        }
-        configJO = config.getConfig();
-        // String configFile = getFileContent(CONFIG_FILE_NAME, "ascii");
-        // configJO = (JsonObject)(new JsonParser()).parse(configFile);
-
-        // load date format
-        // DateFormat dateFormat = new
-        // SimpleDateFormat(configJO.get(JSON_DATE_FORMAT).getAsString());
-        dateFormat = config.getDateFormat();
-        dateString = dateFormat.format(calendar.getTime());
-
-        // if data folder not exist, create one
-        if (!ignoreDate)
-            makeDailyDirectory(config.getRootDir());
-
-        // get base url
-        baseURL = configJO.get(JSON_BASE_URL).getAsString();
-        logger.info("loadConfig(): URL used: {}", baseURL);
-
-        // get the category list
-        JsonArray categoryJA = configJO.get(JSON_CATEGORY_LIST)
-                .getAsJsonArray();
-        for (int i = 0; i < categoryJA.size(); i++) {
-            rssCategoryList
-            .add(new RssCategory(categoryJA.get(i).getAsString()));
-        }
-
-        // load rsslist
-        JsonObject rssList = (JsonObject) configJO.get(JSON_RSS_LIST);
-        for (int i = 0; i < rssCategoryList.size(); i++) {
-            RssCategory rc = rssCategoryList.get(i);
-            String categoryName = rc.categoryName;
-            rc.rssList = new Gson().fromJson(rssList.get(categoryName),
-                    String[].class);
-        }
-        sentenceMinimumLengthRequirement = configJO.get(
-                JSON_SENTENCE_MINIMUM_LENGTH_REQUIREMENT).getAsInt();
-        rawDataDir = outputLocation + "raw_data/";
-
-    }
-
-    /*
      * Create the directory for today's data
      */
     private void makeDailyDirectory(String dataFolderLocation) {
@@ -633,18 +613,4 @@ public class YahooRssScraper implements RssScraper {
         }
         return sb.toString();
     }
-
-    /*
-     * contains the category name and RSS list eg: categoryName:ENTERTAINMENT,
-     * rssList:
-     */
-    private class RssCategory {
-        public String categoryName;
-        public String[] rssList;
-
-        public RssCategory(String categoryName) {
-            this.categoryName = categoryName;
-        }
-    }
-
 }
