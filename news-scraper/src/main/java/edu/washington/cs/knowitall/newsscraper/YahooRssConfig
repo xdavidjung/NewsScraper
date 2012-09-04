@@ -1,7 +1,7 @@
 {
 "folder-name":"yahoo_data/",
 "rss-url":"http://news.yahoo.com/rss/",
-"category":["US", "BUSINESS", "WORLD", "ENTERTAINMENT", "SPORTS", "TECH", "POLITICS", "SCIENCE", "HEALTH"],
+"categories":["US", "BUSINESS", "WORLD", "ENTERTAINMENT", "SPORTS", "TECH", "POLITICS", "SCIENCE", "HEALTH"],
 "rss-list":{
 	"US":["us", "education", "religion", "crime-trials", "contributor-network"], 
 	"BUSINESS":["business", "economy", "stock-markets", "earnings", "personal-finance", "business-press-releases", "taxes", "marketplace"],
