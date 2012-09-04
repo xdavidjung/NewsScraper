@@ -14,8 +14,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -27,8 +27,8 @@ import edu.washington.cs.knowitall.util.DefaultObjects;
 
 /**
  * This class gets ReVerb extractions from news datum and then outputs
- * JSON files containing the extraction data. 
- * 
+ * JSON files containing the extraction data.
+ *
  * @author Pingyang He, David Jung
  */
 public class ReverbNewsExtractor {
@@ -57,7 +57,7 @@ public class ReverbNewsExtractor {
      */
     public ReverbNewsExtractor(Calendar calendar, URL configFileName) {
         logger = LoggerFactory.getLogger(ReverbNewsExtractor.class);
-        
+
         reverb = new ReVerbExtractor();
         this.calendar = calendar;
         if (configFileName != null) {
@@ -76,7 +76,7 @@ public class ReverbNewsExtractor {
 
     /**
      * Get extractions from the data.
-     * 
+     *
      * @param srcDir
      *            specify the location of source data, if null, then use today's
      *            location
@@ -88,9 +88,9 @@ public class ReverbNewsExtractor {
     public void extract(String srcDir, String targetDir) throws IOException {
 
         loadConfig(configFileName);
-        
+
         logger.info("Constructor: Preparing to extract news data.");
-        
+
         String location = null;
         if (srcDir == null && targetDir == null) {
             // extract from the default location
@@ -155,7 +155,7 @@ public class ReverbNewsExtractor {
     }
 
     /*
-     * 
+     *
      */
     private void outputData(String targetDir) {
         logger.info("outputData(): Starting to output data.");
@@ -247,20 +247,20 @@ public class ReverbNewsExtractor {
         StringBuilder sb = new StringBuilder();
         File dataFile = new File(location);
         Scanner sc = null;
-        
+
         try {
             sc = new Scanner(dataFile, ENCODE);
-            
+
             while (sc.hasNextLine())
                 sb.append(sc.nextLine());
-            
+
         } catch (FileNotFoundException e) {
             logger.error("loadData(): Unable to load data.");
             logger.error("{}", e);
         }
-        
+
         if (sc != null) sc.close();
-        
+
         return sb.toString();
     }
 
@@ -268,8 +268,7 @@ public class ReverbNewsExtractor {
      * load configuration file from given location and name
      */
     private void loadConfig(URL location) throws IOException {
-        Config config = new Config();
-        config.loadConfig(location);
+        Config config = new Config(location);
 
         rootDir = config.getRootDir();
         dateString = config.getDateFormat().format(calendar.getTime());

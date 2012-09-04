@@ -24,7 +24,6 @@ import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +54,7 @@ public class ExtractedDataFormatter {
     private double totalConf = 0;
 
     /**
-     * 
+     *
      * @param calendar
      * @param configFileLocation
      * @throws IOException
@@ -75,7 +74,7 @@ public class ExtractedDataFormatter {
     }
 
     /**
-     * 
+     *
      * @param dir
      *            source and target directory; if it's null, then the default
      *            one will be used.
@@ -304,14 +303,7 @@ public class ExtractedDataFormatter {
      * load configuration file from given location and name
      */
     private void loadConfig(URL location) throws IOException {
-        Config config = new Config();
-        try {
-            config.loadConfig(location);
-        } catch (FileNotFoundException e) {
-
-            e.printStackTrace();
-        }
-
+        Config config = new Config(location);
         logger = LoggerFactory.getLogger(ExtractedDataFormatter.class);
 
         rootDir = config.getRootDir();
