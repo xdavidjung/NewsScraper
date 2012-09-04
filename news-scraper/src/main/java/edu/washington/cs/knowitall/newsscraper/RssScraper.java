@@ -1,6 +1,6 @@
 package edu.washington.cs.knowitall.newsscraper;
 
-public interface RssScraper {
+public abstract class RssScraper {
 
     /**
      *
@@ -13,6 +13,6 @@ public interface RssScraper {
      * @param targetDir
      *            Where to store the processed data.
      */
-    public void scrape(boolean fetchData, boolean processData, String sourceDir, String targetDir);
+    public abstract void scrape(boolean fetchData, boolean processData, String sourceDir, String targetDir);
 
 }
