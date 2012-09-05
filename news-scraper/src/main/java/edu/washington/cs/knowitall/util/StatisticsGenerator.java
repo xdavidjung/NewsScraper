@@ -2,11 +2,9 @@ package edu.washington.cs.knowitall.util;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -16,40 +14,32 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
 import edu.washington.cs.knowitall.newsscraper.Config;
-import edu.washington.cs.knowitall.newsscraper.ExtractedNewsData;
 import edu.washington.cs.knowitall.newsscraper.NewsScraperMain;
 
 
 public class StatisticsGenerator {
-    
     private static List<String> categoryList;
     private static Map<String, DayOfWeekData> dayOfWeekMap;
     private static String[] dayOfWeek;
     private static Set<String> duplicateChecker;
-    
+
     public static void main(String[] args) throws IOException{
-		
+
         initVar();
-        
+
         loadConfig();
-        
+
 	    generateStat();
-		
+
 	}
 
 
@@ -62,23 +52,22 @@ public class StatisticsGenerator {
 
 
     private static void generateStat() {
-		
+
 	    String dataFolder = "yahoo_data/extracted_data/";
-	    String outputStaticFolder = "yahoo_data/statics/";
-	    
+
 	    File dataFolderFile = new File(dataFolder);
-	    
+
 	    for(String fileName : dataFolderFile.list()){
-	         
+
 	        processFile(dataFolder + fileName);
-	        
+
 	    }
-	    
+
 	    outputStat();
 	}
-    
+
     private static void outputStat() {
-        
+
         try {
             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File("yahoo_data/statics/statics.txt")),"UTF-8"));
             out.write(statisticsToSting());
@@ -87,7 +76,7 @@ public class StatisticsGenerator {
             excp.printStackTrace();
         }
     }
-    
+
     private static String statisticsToSting(){
         StringBuilder sb = new StringBuilder();
         //print category:
@@ -110,7 +99,7 @@ public class StatisticsGenerator {
     private static void processFile(String fileDir) {
         String content = FileLoader.loadFile(fileDir);
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-        Date date = null; 
+        Date date = null;
         try {
             JSONObject jContent = new JSONObject(content);
             JSONArray ja = jContent.names();
@@ -118,18 +107,18 @@ public class StatisticsGenerator {
                 JSONObject news = (JSONObject) jContent.get(ja.getString(i));
                 if (!duplicateChecker.contains(news.getString("title").trim())){
                     duplicateChecker.add(news.getString("title").trim());
-                    
-                    date = (Date)formatter.parse(news.getString("date")); 
+
+                    date = formatter.parse(news.getString("date"));
                     Calendar cal = new GregorianCalendar();
                     cal.setTime(date);
                     int weekday = cal.get(Calendar.DAY_OF_WEEK);
-                    
+
                     DayOfWeekData thatDay = dayOfWeekMap.get(dayOfWeek[weekday - 1]);
                     thatDay.totalCount ++;
-                    
+
                     JSONArray extractions = news.getJSONArray("extractions");
                     thatDay.extractionCount += extractions.length();
-                    
+
                     String category = news.getString("category");
                     thatDay.categoryCount.put(category, thatDay.categoryCount.get(category) + 1);
                 }
@@ -144,23 +133,18 @@ public class StatisticsGenerator {
 
 
     private static void loadConfig() throws IOException {
-        Config config = new Config();
-        try {
-            config.loadConfig(NewsScraperMain.DEFAULT_CONFIG_URL);
-            categoryList = config.getCategory();
-            for(int i = 0; i < dayOfWeek.length; i++){
-                dayOfWeekMap.put(dayOfWeek[i], new DayOfWeekData());
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+        Config config = new Config(NewsScraperMain.class.getResource("YahooRssConfig"));
+        categoryList = config.getCategories();
+        for(int i = 0; i < dayOfWeek.length; i++){
+            dayOfWeekMap.put(dayOfWeek[i], new DayOfWeekData());
         }
     }
-    
+
     private static class DayOfWeekData{
         int totalCount;
         int extractionCount;
         Map<String, Integer> categoryCount;
-        
+
         public DayOfWeekData(){
             totalCount = 0;
             categoryCount = new HashMap<String, Integer>();
@@ -168,6 +152,6 @@ public class StatisticsGenerator {
                 categoryCount.put(categoryList.get(i), 0);
             }
         }
-        
+
     }
 }
