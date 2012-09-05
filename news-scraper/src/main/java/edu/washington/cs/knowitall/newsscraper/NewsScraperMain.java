@@ -43,30 +43,28 @@ public class NewsScraperMain {
 
     private static Calendar calendar;
     private static Options options;
-    private static URL configUrl;
+    private static Config config;
+    private static CommandLine cmd;
 
     public static void main(String[] args) throws IOException {
         initializeVars();
 
-        CommandLine cmd = getCommands(args, options);
+        cmd = getCommands(args, options);
+        validateOptionNumbers();
 
-        validateOptionNumbers(cmd);
+        config = getConfig();
 
-        fetchConfigFile(cmd);
+        fetchNews();
+        getExtractions();
+        formatData();
 
-        fetchNews(cmd);
-
-        getExtractions(cmd);
-
-        formatData(cmd);
-
-        help(cmd);
+        help();
     }
 
     /**
      * Initialize variables for this object.
      *
-     * @mofidies calendar, options.
+     * @mofidies calendar, options, config.
      * @effects initializes them.
      */
     private static void initializeVars() {
@@ -75,13 +73,8 @@ public class NewsScraperMain {
         logger = LoggerFactory.getLogger(NewsScraperMain.class);
     }
 
-    /**
-     * Fetch news data from the RSS.
-     *
-     * @param cmd
-     *            CommandLine object containing the commands/options data.
-     */
-    private static void fetchNews(CommandLine cmd) {
+    /* Fetch news data from the RSS. */
+    private static void fetchNews() {
 
         RssScraper rs = null;
 
@@ -89,14 +82,12 @@ public class NewsScraperMain {
         if (cmd.hasOption(USE_GOOGLE_RSS)) {
             rs = new GoogleRssScraper();
         } else if (cmd.hasOption(USE_YAHOO_RSS)) {
-            // rs = new YahooRssScraper();
-        } else {
-            throw new IllegalArgumentException("One of -g or -y must be specified!");
+            rs = new YahooRssScraper(calendar, config);
         }
-        // YahooRssScraper yrs = new YahooRssScraper(calendar, configUrl);
 
         // -s
         if (cmd.hasOption(SCRAPE_DATA_ONLY)) {
+            rs.fetchData();
             rs.scrape(true, false, null, null);
 
         // -sp
@@ -110,14 +101,9 @@ public class NewsScraperMain {
         }
     }
 
-    /**
-     * Pulls out extractions from the news data using ReVerb.
-     *
-     * @throws IOException
-     *             if the configuration file cannot be found.
-     */
-    private static void getExtractions(CommandLine cmd) throws IOException {
-        ReverbNewsExtractor rne = new ReverbNewsExtractor(calendar, configUrl);
+    /* Pulls out extractions from the news data using ReVerb. */
+    private static void getExtractions() {
+        ReverbNewsExtractor rne = new ReverbNewsExtractor(calendar, config);
 
         // -r
         if (cmd.hasOption(USE_REVERB)) {
@@ -137,11 +123,8 @@ public class NewsScraperMain {
 
     /**
      * Format the stored data - called when the user uses the -fmt option.
-     *
-     * @throws IOException
-     *             if the configuration file cannot be found.
      */
-    private static void formatData(CommandLine cmd) throws IOException {
+    private static void formatData() {
         if (cmd.hasOption(FORMAT_OPT)) {
 
             String[] dir = null;
@@ -184,11 +167,31 @@ public class NewsScraperMain {
             }
 
             ExtractedDataFormatter formatter = new ExtractedDataFormatter(
-                    calendar, configUrl);
+                    calendar, config);
             formatter.format(dir, timeInterval, confidenceThreshold, category,
                     formatToday);
 
         }
+    }
+
+    /* Fetches the appropriate configuration file based on the command
+     * line args.
+     * @return a Config object
+     */
+    private static Config getConfig() {
+        Config retConfig = null;
+
+        if (cmd.hasOption(USE_GOOGLE_RSS)) {
+            URL configUrl = NewsScraperMain.class.getResource("GoogleRssConfig");
+            retConfig = new Config(configUrl);
+        } else if (cmd.hasOption(USE_YAHOO_RSS)) {
+            URL configUrl = NewsScraperMain.class.getResource("YahooRssConfig");
+            retConfig = new Config(configUrl);
+        } else {
+            throw new IllegalArgumentException("One of -g or -y must be specified!");
+        }
+
+        return retConfig;
     }
 
     /*
@@ -209,8 +212,7 @@ public class NewsScraperMain {
         Option processWithDirOp = new Option(
                 PROCESS_RSS_WITH_GIVEN_DIR,
                 false,
-                "Process RSS only: the first arg is the source directory, the "
-                        + "second arg is the target directory where data will be saved.");
+                "Process RSS only: the first arg is the source directory with the raw data, the second arg is the target directory where processed data will be saved.");
         processWithDirOp.setArgs(2);
 
         // -r
@@ -219,8 +221,7 @@ public class NewsScraperMain {
 
         // -rd
         Option useReverbWithDirOp = new Option(USE_REVERB_WITH_DIR, false,
-                "Use reverb to extract files in the first arg and save it "
-                        + "into second arg directory.");
+                "Use reverb to extract files in the first arg and save it into second arg directory.");
         useReverbWithDirOp.setArgs(2);
 
         // -fmt
@@ -229,53 +230,39 @@ public class NewsScraperMain {
 
         // -ftoday
         Option formatTodayOp = new Option(FORMAT_TODAY, false,
-                "Format today's file; this can not be used with the "
-                        + FORMAT_TIME_FILTER + " option.");
+                "Format today's file. This can not be used with the " + FORMAT_TIME_FILTER + " option.");
         // formaterOp.setArgs(2);
 
         // -fct
         Option formatConfidenceThreshhold = new Option(
                 FORMAT_CONFIDENCE_THRESHOLD,
                 false,
-                "This option cannot be used without the "
-                        + FORMAT_OPT
-                        + " option. "
-                        + "Specify a minimum confidence requirement; if not specified, "
-                        + "then a default number of extractions will be taken.");
+                "This option cannot be used without the " + FORMAT_OPT + " option. "
+              + "Specify a minimum confidence requirement. If not specified, then a default number of extractions will be taken.");
         formatConfidenceThreshhold.setArgs(1);
 
         // -fc
         Option formatCategoryFilter = new Option(
                 FORMAT_CATEGORY_FILTER,
                 false,
-                "This option cannot be used without the "
-                        + FORMAT_OPT
-                        + " option. "
-                        + "Specify the category name; if not specified, all categories "
-                        + "will be used.");
+                "This option cannot be used without the " + FORMAT_OPT + " option. "
+              + "Specify the category name. If not specified, all categories will be used.");
         formatCategoryFilter.setArgs(1);
 
         // -ft
         Option formatTimeFilter = new Option(
                 FORMAT_TIME_FILTER,
                 false,
-                "This option cannot be used without the "
-                        + FORMAT_OPT
-                        + " option. "
-                        + "Specify the time interval. The files that fall into this "
-                        + "interval will be formatted (for eg: 2012-05-01 2012-05-04); "
-                        + "if not specified, then a default interval will be formatted.");
+                "This option cannot be used without the " + FORMAT_OPT + " option. "
+              + "Specify the time interval. The files that fall into this interval will be formatted (e.g., 2012-05-01 2012-05-04). If not specified, then a default interval will be formatted.");
         formatTimeFilter.setArgs(2);
 
         // -fd
         Option formatDir = new Option(
                 FORMAT_DIR,
                 false,
-                "This option cannot be used without the "
-                        + FORMAT_OPT
-                        + " option. "
-                        + "Specify the directory of source files and a target file; if "
-                        + "not specified, then a default will be used.");
+                "This option cannot be used without the " + FORMAT_OPT + " option. "
+              + "Specify the directory of source files and a target file; if not specified, then a default will be used.");
         formatDir.setArgs(2);
 
         // -g
@@ -308,9 +295,6 @@ public class NewsScraperMain {
         CommandLine cmd = null;
         try {
             cmd = parser.parse(options, args);
-            if (cmd.hasOption(USE_GOOGLE_RSS) && cmd.hasOption(USE_YAHOO_RSS)) {
-                throw new IllegalArgumentException("Only one of -g or -y may be used.");
-            }
         } catch (ParseException e) {
             printUsage();
         }
@@ -318,29 +302,16 @@ public class NewsScraperMain {
     }
 
     /*
-     * Initializes configFile.
-     *
-     * @modifies configFile
-     *
-     * @effects if the user has specified a configuration file, configFile is
-     * assigned its URL; else, configFile is assigned to DEFAULT_CONFIG_FILE.
+     * Validate the number of options passed in args. Checks that there is at
+     * least one option, and that exactly one of -g or -y is used.
      */
-    private static void fetchConfigFile(CommandLine cmd) {
-        if (cmd.hasOption(USE_GOOGLE_RSS)) {
-            configUrl = NewsScraperMain.class.getResource("GoogleRssConfig");
-        } else if (cmd.hasOption(USE_YAHOO_RSS)) {
-            configUrl = NewsScraperMain.class.getResource("YahooRssConfig");
-        } else {
-            throw new IllegalArgumentException("No news source specified!");
-        }
-    }
-
-    /*
-     * Validate the number of options passed in args
-     */
-    private static void validateOptionNumbers(CommandLine cmd) {
-        if (cmd.getOptions().length == 0)
+    private static void validateOptionNumbers() {
+        if (cmd.getOptions().length < 1)
             printUsage();
+        if (cmd.hasOption(USE_GOOGLE_RSS) && cmd.hasOption(USE_YAHOO_RSS))
+            throw new IllegalArgumentException("Only one of -g or -y may be used.");
+        if (!cmd.hasOption(USE_GOOGLE_RSS) && !cmd.hasOption(USE_YAHOO_RSS))
+            throw new IllegalArgumentException("Exactly one of -g or -y must be used.");
     }
 
     /**
@@ -348,7 +319,7 @@ public class NewsScraperMain {
      *
      * @modifies nothing
      */
-    private static void help(CommandLine cmd) {
+    private static void help() {
         if (cmd.hasOption(HELP)) {
             printUsage();
         }
