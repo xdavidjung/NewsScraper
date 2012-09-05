@@ -11,8 +11,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class is used to scrape news from the internet from the command line.
@@ -20,8 +18,6 @@ import org.slf4j.LoggerFactory;
  * @author Pingyang He, David H Jung
  */
 public class NewsScraperMain {
-
-    private static Logger logger;
 
     /**
      * Options that this class recognizes.
@@ -64,13 +60,12 @@ public class NewsScraperMain {
     /**
      * Initialize variables for this object.
      *
-     * @mofidies calendar, options, config.
+     * @mofidies calendar, options.
      * @effects initializes them.
      */
     private static void initializeVars() {
         calendar = Calendar.getInstance();
         options = new Options();
-        logger = LoggerFactory.getLogger(NewsScraperMain.class);
     }
 
     /* Fetch news data from the RSS. */
@@ -78,9 +73,8 @@ public class NewsScraperMain {
 
         RssScraper rs = null;
 
-        // TODO: Add arguments to constructors once I figure them out.
         if (cmd.hasOption(USE_GOOGLE_RSS)) {
-            rs = new GoogleRssScraper();
+            rs = new GoogleRssScraper(calendar, config);
         } else if (cmd.hasOption(USE_YAHOO_RSS)) {
             rs = new YahooRssScraper(calendar, config);
         }
@@ -88,16 +82,16 @@ public class NewsScraperMain {
         // -s
         if (cmd.hasOption(SCRAPE_DATA_ONLY)) {
             rs.fetchData();
-            rs.scrape(true, false, null, null);
 
         // -sp
         } else if (cmd.hasOption(SCRAPE_DATA_AND_PROCESS_DATA)) {
-            rs.scrape(true, true, null, null);
+            rs.fetchData();
+            rs.processData(null, null);
 
         // -p
         } else if (cmd.hasOption(PROCESS_RSS_WITH_GIVEN_DIR)) {
             String[] dirs = cmd.getOptionValues(PROCESS_RSS_WITH_GIVEN_DIR);
-            rs.scrape(false, true, dirs[0], dirs[1]);
+            rs.processData(dirs[0], dirs[1]);
         }
     }
 
@@ -231,7 +225,6 @@ public class NewsScraperMain {
         // -ftoday
         Option formatTodayOp = new Option(FORMAT_TODAY, false,
                 "Format today's file. This can not be used with the " + FORMAT_TIME_FILTER + " option.");
-        // formaterOp.setArgs(2);
 
         // -fct
         Option formatConfidenceThreshhold = new Option(

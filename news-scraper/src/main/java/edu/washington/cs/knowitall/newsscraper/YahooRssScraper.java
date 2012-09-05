@@ -7,7 +7,6 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -58,7 +57,7 @@ public class YahooRssScraper extends RssScraper {
     private final String ENCODE = "UTF-8";
     private final String FOLDER_PATH_SEPERATOR = "/";
 
-    private URL configUrl;
+    private Config config;
     private Calendar calendar;
     private String dateString;
     private String baseURL;
@@ -73,7 +72,6 @@ public class YahooRssScraper extends RssScraper {
     private Map<String, NewsData> dataMap;
     private int sentenceMinimumLength;
     private Set<String> duplicateChecker;
-    private boolean ignoreDate;
     private DateFormat dateFormat;
 
     /**
@@ -82,36 +80,53 @@ public class YahooRssScraper extends RssScraper {
      * @param configFile
      *            The URL of the configuration file to use.
      */
-    public YahooRssScraper(Calendar calendar, URL configFile) {
+    public YahooRssScraper(Calendar cal, Config con) {
+        calendar = cal;
+        config = con;
+        readConfig();
 
-        this.calendar = calendar;
-        this.configUrl = configFile;
         logger = LoggerFactory.getLogger(YahooRssScraper.class);
 
-        rssCategoryToFeeds = new HashMap<String, List<String>>();
+        // TODO: put these elsewhere
         duplicateChecker = new HashSet<String>();
-        ignoreDate = false;
         dataMap = new HashMap<String, NewsData>();
     }
 
-
-    /* Load the configuration file and set up the appropriate vars.
-     * @modifies dateFormat, dateString, baseURl, rssCategoryList,
-     *           sentenceMinimumLength, rawDataDir
+    /* Using the passed config file, set up some easy vars.
+     * @modifies dateFormat, dateString, baseURl, sentenceMinimumLength
      */
-    private void setupConfig() {
-        logger.info("setupConfig(): Loading configuration file.");
-
-        Config config = new Config(configUrl);
-
-        if (!ignoreDate)
-            makeDailyDirectory(config.getRootDir());
-
+    private void readConfig() {
         dateFormat = config.getDateFormat();
         dateString = dateFormat.format(calendar.getTime());
         baseURL = config.getBaseUrl();
+        sentenceMinimumLength = config.getSentenceMinimumLength();
+    }
+
+    /*
+     * TODO:
+     * split up the entire class into modular methods so it can be treated as an API.
+     * Each method will take parts of the config file that they need, initialize the vars that they need.
+     */
+
+    /*
+     * (non-Javadoc)
+     * @see edu.washington.cs.knowitall.newsscraper.RssScraper#fetchData()
+     *
+     * @modifies outputLocation, rawDataDir, categories, rssCategoryToFeeds, file system
+     * @effects outputLocation, rawDataDir, categories: sets to what is specified in config
+     * @effects rssCategoryToFeeds: fills map with rss feeds.
+     * @effects file system: creates the directories specified in config: the root directory,
+     *                       daily directory, and raw data directory. fills raw data directory
+     *                       with fetched HTML data.
+     */
+    public void fetchData() {
+        logger.info("fetchData(): Start fetching data.");
+
+        outputLocation = makeDailyDirectory(config.getRootDir());
+        rawDataDir = outputLocation + "raw_data/";
 
         categories = config.getCategories();
+        rssCategoryToFeeds = new HashMap<String, List<String>>();
         for (String category: categories) {
             rssCategoryToFeeds.put(category, new ArrayList<String>());
         }
@@ -125,49 +140,6 @@ public class YahooRssScraper extends RssScraper {
                 feedsToFill.add(feed.getAsString());
             }
         }
-        sentenceMinimumLength = config.getSentenceMinimumLength();
-        rawDataDir = outputLocation + "raw_data/";
-
-    }
-
-    public void scrape(boolean fetchData, boolean processData, String sourceDir, String targetDir) {
-
-        if (sourceDir != null && targetDir != null)
-            ignoreDate = true;
-
-        setupConfig();
-
-        if (fetchData)
-            fetchData();
-
-        if (processData) {
-            if (sourceDir == null && targetDir == null)
-                processHtml(rawDataDir);
-            else if (sourceDir != null && targetDir != null) {
-                outputLocation = targetDir.trim();
-                if (!outputLocation.endsWith(FOLDER_PATH_SEPERATOR))
-                    outputLocation += FOLDER_PATH_SEPERATOR;
-
-                File locationFile = new File(outputLocation);
-                locationFile.mkdirs();
-
-                if (!locationFile.exists())
-                    logger.error("scrape(): "
-                            + "Failure to create target folder.");
-
-                processHtml(sourceDir);
-            } else {
-                throw new IllegalArgumentException();
-            }
-            outputDatabase();
-        }
-    }
-
-    /*
-     * Fetch the online news data and store it.
-     */
-    private void fetchData() {
-        logger.info("fetchData(): Start fetching data.");
 
         File rawDir = new File(rawDataDir);
         rawDir.mkdirs();
@@ -201,95 +173,47 @@ public class YahooRssScraper extends RssScraper {
         logger.info("fetchData(): End fetching.");
     }
 
-    /*
-     * Outputs the the map data to the database in JSON format.
-     */
-    private void outputDatabase() {
-        logger.info("outputDatabase(): Outputting news data.");
+    public void processData(String sourceDir, String targetDir) {
 
-        // load id number from last time
-        long prevCount;
-        long currentCount;
-        File idCountFile = new File(ID_COUNT_FILE_NAME);
-        try {
-            Scanner sc = new Scanner(idCountFile);
-            sc.nextInt();
-            prevCount = sc.nextLong();
-            currentCount = prevCount + 1;
-        } catch (FileNotFoundException e) {
-            logger.error("outputDatabase(): Can't find idCount file.");
-            currentCount = -1;
-            prevCount = -1;
+        if (sourceDir == null && targetDir == null) {
+            processHtml(rawDataDir, false);
+
+        } else if (sourceDir != null && targetDir != null) {
+            outputLocation = targetDir.trim();
+            if (!outputLocation.endsWith(FOLDER_PATH_SEPERATOR))
+                outputLocation += FOLDER_PATH_SEPERATOR;
+
+            File outputFile = new File(outputLocation);
+            outputFile.mkdirs();
+
+            if (!outputFile.exists())
+                logger.error("scrape(): "
+                        + "Failure to create target folder.");
+
+            processHtml(sourceDir, true);
         }
 
-        try {
-
-            String dataLocation = outputLocation + "data/";
-            File f = new File(dataLocation);
-            f.mkdirs();
-
-            String rssData = dataLocation + dateString + "_"
-                    + OUTPUT_DATABASE_NAME;
-            File dataFile = new File(rssData);
-            dataFile.createNewFile();
-
-            // not using JSON since converting json to string doesn't support
-            // unicode
-            StringBuilder sb = new StringBuilder();
-            sb.append("{");
-            String seperator = ", ";
-            for (String title : dataMap.keySet()) {
-                sb.append("\"" + currentCount++ + "\": "
-                        + dataMap.get(title).toJsonString() + seperator);
-            }
-            // fence post problem
-            if (!dataMap.isEmpty())
-                sb.delete(sb.length() - seperator.length(), sb.length());
-
-            sb.append("}");
-            BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
-                    new FileOutputStream(new File(rssData)), ENCODE));
-            if (sb.length() < 100)
-                logger.error("outputDatabase(): " + "Output data is too short.");
-            out.write(sb.toString());
-            out.close();
-
-        } catch (Exception e) {
-            logger.error("outputDatabase(): " + "Failure to output data.");
-            e.printStackTrace();
-        }
-
-        // write the new id count to file
-        FileWriter idCountStream;
-        try {
-            idCountStream = new FileWriter(ID_COUNT_FILE_NAME);
-            BufferedWriter idOut = new BufferedWriter(idCountStream);
-            idOut.write(prevCount + " " + currentCount);
-            idOut.close();
-        } catch (IOException e) {
-            logger.error("outputDatabase(): " + "Failure to increase id count.");
-            e.printStackTrace();
-        }
-        logger.info("outputDatabase(): Finished outputting news data.");
-
+        outputDatabase();
     }
 
     /*
      * Parse the files in the given directory into the map.
-     * @param dir the directory containing the source files.
+     * @param dir the directory containing the raw data files.
+     * @param processOnly true if we have not fetched raw data.
      */
-    private void processHtml(String dir) {
+    private void processHtml(String dir, boolean processOnly) {
 
-        // make sure dir ends with '/'
-        if (!dir.endsWith("/"))
-            dir = dir + "/";
+        if (!dir.endsWith(FOLDER_PATH_SEPERATOR))
+            dir = dir + FOLDER_PATH_SEPERATOR;
 
         logger.info("processHtml(): Start processing HTML.");
 
+        // files is a grab of all the files in the given dir.
         File rawDataFile = new File(dir);
         String[] files = rawDataFile.list();
 
-        if (ignoreDate && files.length > 0) {
+        // grab the date string for this folder.
+        if (processOnly && files.length > 0) {
             String fileDate = getFileDate(files[0]);
             if (fileDate != null)
                 dateString = fileDate;
@@ -299,10 +223,11 @@ public class YahooRssScraper extends RssScraper {
             logger.info("processHtml(): Process {}", fileName);
             int timeSeperatorPos = fileName.indexOf('_');
             int catSeperatorPos = fileName.indexOf('_', timeSeperatorPos + 1);
+
             String categoryName = fileName.substring(timeSeperatorPos + 1,
-                    catSeperatorPos);
+                                                     catSeperatorPos);
             String rssName = fileName.substring(catSeperatorPos + 1,
-                    fileName.indexOf('.'));
+                                                fileName.indexOf('.'));
 
             // read rss file from local disk
             String fileContent = getFileContent(dir + fileName, ENCODE);
@@ -315,7 +240,7 @@ public class YahooRssScraper extends RssScraper {
                 try {
                     String pubdate = item.getElementsByTag("pubdate").first()
                             .text();
-                    if (checkDateMatch(pubdate) || ignoreDate) {
+                    if (checkDateMatch(pubdate) || processOnly) {
 
                         // get news' title
                         Element titleEle = item.getElementsByTag("title")
@@ -410,6 +335,79 @@ public class YahooRssScraper extends RssScraper {
             }
         }
         logger.info("processHtml(): End processing HTML.");
+    }
+
+    /*
+     * Outputs the the map data to the database in JSON format.
+     */
+    private void outputDatabase() {
+        logger.info("outputDatabase(): Outputting news data.");
+
+        // load id number from last time
+        long prevCount;
+        long currentCount;
+        File idCountFile = new File(ID_COUNT_FILE_NAME);
+        try {
+            Scanner sc = new Scanner(idCountFile);
+            sc.nextInt();
+            prevCount = sc.nextLong();
+            currentCount = prevCount + 1;
+        } catch (FileNotFoundException e) {
+            logger.error("outputDatabase(): Can't find idCount file.");
+            currentCount = -1;
+            prevCount = -1;
+        }
+
+        try {
+
+            String dataLocation = outputLocation + "data/";
+            File f = new File(dataLocation);
+            f.mkdirs();
+
+            String rssData = dataLocation + dateString + "_"
+                    + OUTPUT_DATABASE_NAME;
+            File dataFile = new File(rssData);
+            dataFile.createNewFile();
+
+            // not using JSON since converting json to string doesn't support
+            // unicode
+            StringBuilder sb = new StringBuilder();
+            sb.append("{");
+            String seperator = ", ";
+            for (String title : dataMap.keySet()) {
+                sb.append("\"" + currentCount++ + "\": "
+                        + dataMap.get(title).toJsonString() + seperator);
+            }
+            // fence post problem
+            if (!dataMap.isEmpty())
+                sb.delete(sb.length() - seperator.length(), sb.length());
+
+            sb.append("}");
+            BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
+                    new FileOutputStream(new File(rssData)), ENCODE));
+            if (sb.length() < 100)
+                logger.error("outputDatabase(): " + "Output data is too short.");
+            out.write(sb.toString());
+            out.close();
+
+        } catch (Exception e) {
+            logger.error("outputDatabase(): " + "Failure to output data.");
+            e.printStackTrace();
+        }
+
+        // write the new id count to file
+        FileWriter idCountStream;
+        try {
+            idCountStream = new FileWriter(ID_COUNT_FILE_NAME);
+            BufferedWriter idOut = new BufferedWriter(idCountStream);
+            idOut.write(prevCount + " " + currentCount);
+            idOut.close();
+        } catch (IOException e) {
+            logger.error("outputDatabase(): " + "Failure to increase id count.");
+            e.printStackTrace();
+        }
+        logger.info("outputDatabase(): Finished outputting news data.");
+
     }
 
     /*
@@ -568,32 +566,34 @@ public class YahooRssScraper extends RssScraper {
     }
 
     /*
-     * Create the directory for today's data
+     * Create the directory for today's data. Returns the
+     * name of the daily directory.
+     * @require dateString is set.
      */
-    private void makeDailyDirectory(String dataFolderLocation) {
+    private String makeDailyDirectory(String rootDataFolder) {
 
-        // make sure that the root directory exists
-        File folder = new File(dataFolderLocation);
+        // make sure that the root directory exists. if not, create it.
+        File folder = new File(rootDataFolder);
         if (!folder.exists())
             folder.mkdir();
 
-        // make sure today's folder exists
-        outputLocation = dataFolderLocation + dateString + "/";
-        File todayFolder = new File(outputLocation);
-        todayFolder.mkdir();
+        // make sure the dir for today exists. if not, create it.
+        String dailyDir = rootDataFolder + dateString + "/";
+        File todayFolder = new File(dailyDir);
+        if (!todayFolder.exists())
+            todayFolder.mkdir();
 
-        // if the folder is not created
+        // if the folder is not created, somehow
         if (!todayFolder.exists()) {
-            logger.error("makeDailydirectory(): "
+            logger.error("makeDailyDirectory(): "
                     + "Failure to create today's directory.");
             System.exit(1);
         }
 
+        return dailyDir;
     }
 
-    /*
-     * load file to a string then return it
-     */
+    /* Load file to a string then return it. */
     private String getFileContent(String fileName, String encode) {
         StringBuilder sb = new StringBuilder();
         try {
