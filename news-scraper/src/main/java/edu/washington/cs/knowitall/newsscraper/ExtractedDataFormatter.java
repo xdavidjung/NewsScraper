@@ -35,6 +35,7 @@ public class ExtractedDataFormatter {
     Logger logger;
 
     private Calendar calendar;
+    private Config config;
     private String rootDir;
     private String dateFormatStr;
     private DateFormat dateFormat;
@@ -59,18 +60,16 @@ public class ExtractedDataFormatter {
      * @param configFileLocation
      * @throws IOException
      */
-    public ExtractedDataFormatter(Calendar calendar, URL configFileLocation)
-            throws IOException {
-
+    public ExtractedDataFormatter(Calendar cal, Config con) {
         startDate = null;
         endDate = null;
         extractedDataSuffix = null;
         extractedDataDir = null;
         allTime = false;
         data = new ArrayList<FormattedNewsData>();
-        this.calendar = calendar;
+        calendar = cal;
         duplicateChecker = new HashSet<String>();
-        loadConfig(configFileLocation);
+        loadConfig();
     }
 
     /**
@@ -302,8 +301,7 @@ public class ExtractedDataFormatter {
     /*
      * load configuration file from given location and name
      */
-    private void loadConfig(URL location) throws IOException {
-        Config config = new Config(location);
+    private void loadConfig() {
         logger = LoggerFactory.getLogger(ExtractedDataFormatter.class);
 
         rootDir = config.getRootDir();

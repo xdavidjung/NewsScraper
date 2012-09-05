@@ -6,7 +6,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.net.URL;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -38,7 +37,7 @@ public class ReverbNewsExtractor {
 
     private Logger logger;
 
-    private URL configFileName;
+    private Config config;
     private String dateString;
     private String rootDir;
     private String extractedDataSuffix;
@@ -55,16 +54,12 @@ public class ReverbNewsExtractor {
      *            tells the location of configuration file. if null, uses a
      *            default.
      */
-    public ReverbNewsExtractor(Calendar calendar, URL configFileName) {
+    public ReverbNewsExtractor(Calendar cal, Config con) {
         logger = LoggerFactory.getLogger(ReverbNewsExtractor.class);
 
         reverb = new ReVerbExtractor();
-        this.calendar = calendar;
-        if (configFileName != null) {
-            this.configFileName = configFileName;
-        } else {
-            this.configFileName = this.getClass().getResource("YahooRSSConfig");
-        }
+        calendar = cal;
+        config = con;
         data = new HashMap<Long, ExtractedNewsData>();
         try {
             chunker = new OpenNlpSentenceChunker();
@@ -83,11 +78,10 @@ public class ReverbNewsExtractor {
      * @param targetDir
      *            specify where the result will be stored, if null, then put
      *            data in today's location
-     * @throws IOException
      */
-    public void extract(String srcDir, String targetDir) throws IOException {
+    public void extract(String srcDir, String targetDir) {
 
-        loadConfig(configFileName);
+        loadConfig();
 
         logger.info("Constructor: Preparing to extract news data.");
 
@@ -140,9 +134,9 @@ public class ReverbNewsExtractor {
                 }.getType());
         Iterator<Entry<Long, ExtractedNewsData>> it = map.entrySet().iterator();
         while (it.hasNext()) {
-            Map.Entry<Long, ExtractedNewsData> pairs = (Map.Entry<Long, ExtractedNewsData>) it
+            Map.Entry<Long, ExtractedNewsData> pairs = it
                     .next();
-            ExtractedNewsData currentData = (ExtractedNewsData) pairs
+            ExtractedNewsData currentData = pairs
                     .getValue();
             currentData.extractions = new HashMap<String, ChunkedSentence>();
             reverbExtract(currentData, currentData.imgAlt);
@@ -203,7 +197,7 @@ public class ReverbNewsExtractor {
 
         while (it.hasNext()) {
             empty = false;
-            Map.Entry<Long, ExtractedNewsData> pair = (Map.Entry<Long, ExtractedNewsData>) it
+            Map.Entry<Long, ExtractedNewsData> pair = it
                     .next();
             sb.append(pair.getValue().toJsonString(reverb) + seperator);
         }
@@ -267,9 +261,7 @@ public class ReverbNewsExtractor {
     /*
      * load configuration file from given location and name
      */
-    private void loadConfig(URL location) throws IOException {
-        Config config = new Config(location);
-
+    private void loadConfig() {
         rootDir = config.getRootDir();
         dateString = config.getDateFormat().format(calendar.getTime());
         extractedDataSuffix = config.getExtractedDataSuffix();
