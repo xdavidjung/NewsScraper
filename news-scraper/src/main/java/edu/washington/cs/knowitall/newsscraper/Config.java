@@ -29,7 +29,7 @@ public class Config {
     private static final String DATE_FORMAT_STRING = "yyyy-MM-dd";
 
     // these are all fields in the json config file.
-    private static final String FOLDER_NAME = "folder-name";
+    private static final String FOLDER_NAME = "root-dir";
     private static final String RSS_URL = "rss-url";
     private static final String CATEGORY_LIST = "categories";
     private static final String RSS_FEED_LIST = "rss-list";
