@@ -10,12 +10,10 @@ import java.io.OutputStreamWriter;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
@@ -26,12 +24,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 
 /**
  * This class fetches the RSS data from Yahoo and stores the metadata to the
@@ -42,9 +34,6 @@ import com.google.gson.JsonObject;
  */
 public class YahooRssScraper extends RssScraper {
 
-    private Logger logger;
-
-    private final String ID_COUNT_FILE_NAME = "idCount";
     private final String OUTPUT_DATABASE_NAME = "yahoo_rss.data";
     private final String TAG_LINK = "<link />";
     private final String TAG_SOURCE = "</source>";
@@ -54,123 +43,18 @@ public class YahooRssScraper extends RssScraper {
     private final String GARBAGE_TAIL = "...";
     private final String USELESS_CONTENT_INDICATOR = "[...]";
     private final String[] ENDING_PUNCTUATION = { ".", "?", "!", ".\"", "?\"", "!\"" };
-    private final String ENCODE = "UTF-8";
-    private final String FOLDER_PATH_SEPERATOR = "/";
 
-    private Config config;
-    private Calendar calendar;
-    private String dateString;
-    private String baseURL;
-
-    /** List of all the categories from the config file. */
-    private List<String> categories;
-
-    /** Mapping from a category name to a list of its RSS feeds. */
-    private Map<String, List<String>> rssCategoryToFeeds;
-    private String outputLocation;
-    private String rawDataDir;
     private Map<String, NewsData> dataMap;
-    private int sentenceMinimumLength;
     private Set<String> duplicateChecker;
-    private DateFormat dateFormat;
 
     /**
-     * @param calendar
+     * @param cal
      *            Today's date
-     * @param configFile
-     *            The URL of the configuration file to use.
+     * @param con
+     *            The configuration file object.
      */
     public YahooRssScraper(Calendar cal, Config con) {
-        calendar = cal;
-        config = con;
-        readConfig();
-
-        logger = LoggerFactory.getLogger(YahooRssScraper.class);
-
-        // TODO: put these elsewhere
-        duplicateChecker = new HashSet<String>();
-        dataMap = new HashMap<String, NewsData>();
-    }
-
-    /* Using the passed config file, set up some easy vars.
-     * @modifies dateFormat, dateString, baseURl, sentenceMinimumLength
-     */
-    private void readConfig() {
-        dateFormat = config.getDateFormat();
-        dateString = dateFormat.format(calendar.getTime());
-        baseURL = config.getBaseUrl();
-        sentenceMinimumLength = config.getSentenceMinimumLength();
-    }
-
-    /*
-     * TODO:
-     * split up the entire class into modular methods so it can be treated as an API.
-     * Each method will take parts of the config file that they need, initialize the vars that they need.
-     */
-
-    /*
-     * (non-Javadoc)
-     * @see edu.washington.cs.knowitall.newsscraper.RssScraper#fetchData()
-     *
-     * @modifies outputLocation, rawDataDir, categories, rssCategoryToFeeds, file system
-     * @effects outputLocation, rawDataDir, categories: sets to what is specified in config
-     * @effects rssCategoryToFeeds: fills map with rss feeds.
-     * @effects file system: creates the directories specified in config: the root directory,
-     *                       daily directory, and raw data directory. fills raw data directory
-     *                       with fetched HTML data.
-     */
-    public void fetchData() {
-        logger.info("fetchData(): Start fetching data.");
-
-        outputLocation = makeDailyDirectory(config.getRootDir());
-        rawDataDir = outputLocation + "raw_data/";
-
-        categories = config.getCategories();
-        rssCategoryToFeeds = new HashMap<String, List<String>>();
-        for (String category: categories) {
-            rssCategoryToFeeds.put(category, new ArrayList<String>());
-        }
-
-        JsonObject rssList = config.getJsonFeeds();
-        for (String category: categories) {
-            List<String> feedsToFill = rssCategoryToFeeds.get(category);
-            JsonArray feedSource = rssList.get(category).getAsJsonArray();
-
-            for (JsonElement feed: feedSource) {
-                feedsToFill.add(feed.getAsString());
-            }
-        }
-
-        File rawDir = new File(rawDataDir);
-        rawDir.mkdirs();
-
-        for (String categoryName: categories) {
-            List<String> feeds = rssCategoryToFeeds.get(categoryName);
-            for (String feedName: feeds) {
-                try {
-                    Document doc = Jsoup.connect(baseURL + feedName).get();
-
-                    // write fetched xml to local data
-                    BufferedWriter out = new BufferedWriter(
-                            new OutputStreamWriter(new FileOutputStream(
-                                    new File(rawDataDir + dateString + "_"
-                                            + categoryName + "_" + feedName
-                                            + ".html"), true), ENCODE));
-                    out.write(doc.toString());
-                    out.close();
-
-                    logger.info(
-                            "fetchData(): " + "Fetched {}: {} successfully",
-                            categoryName, feedName);
-
-                } catch (IOException e) {
-                    logger.error("fetchData(): " + "Failed to download: {}_{}",
-                            categoryName, feedName);
-                    e.printStackTrace();
-                }
-            }
-        }
-        logger.info("fetchData(): End fetching.");
+        super(cal, con);
     }
 
     public void processData(String sourceDir, String targetDir) {
@@ -207,6 +91,9 @@ public class YahooRssScraper extends RssScraper {
             dir = dir + FOLDER_PATH_SEPERATOR;
 
         logger.info("processHtml(): Start processing HTML.");
+
+        duplicateChecker = new HashSet<String>();
+        dataMap = new HashMap<String, NewsData>();
 
         // files is a grab of all the files in the given dir.
         File rawDataFile = new File(dir);
@@ -563,34 +450,6 @@ public class YahooRssScraper extends RssScraper {
             return paraText;
 
         return null;
-    }
-
-    /*
-     * Create the directory for today's data. Returns the
-     * name of the daily directory.
-     * @require dateString is set.
-     */
-    private String makeDailyDirectory(String rootDataFolder) {
-
-        // make sure that the root directory exists. if not, create it.
-        File folder = new File(rootDataFolder);
-        if (!folder.exists())
-            folder.mkdir();
-
-        // make sure the dir for today exists. if not, create it.
-        String dailyDir = rootDataFolder + dateString + "/";
-        File todayFolder = new File(dailyDir);
-        if (!todayFolder.exists())
-            todayFolder.mkdir();
-
-        // if the folder is not created, somehow
-        if (!todayFolder.exists()) {
-            logger.error("makeDailyDirectory(): "
-                    + "Failure to create today's directory.");
-            System.exit(1);
-        }
-
-        return dailyDir;
     }
 
     /* Load file to a string then return it. */
