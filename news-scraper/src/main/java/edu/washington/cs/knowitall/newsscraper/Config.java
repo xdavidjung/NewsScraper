@@ -173,8 +173,8 @@ public class Config {
     }
 
     /* read the given file into memory as a string */
-    private String readFile(URL configFile) throws IOException {
-        BufferedReader br = new BufferedReader(new InputStreamReader(configFile.openStream()));
+    private String readFile(URL configUrl) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(configUrl.openStream()));
         StringBuilder sb = new StringBuilder();
         String nextLine;
         while((nextLine = br.readLine()) != null)
