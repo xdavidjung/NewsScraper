@@ -180,6 +180,7 @@ public class Config {
         while((nextLine = br.readLine()) != null)
             sb.append(nextLine);
 
+        br.close();
         return sb.toString();
     }
 }
