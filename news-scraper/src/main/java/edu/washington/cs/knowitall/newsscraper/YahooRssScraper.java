@@ -230,20 +230,16 @@ public class YahooRssScraper extends RssScraper {
      * Gets the URL of the given item and stores it in data.
      */
     private void getURL(Element item, NewsData data) {
-        try {
-            String url = item.getElementsByTag("link").first().text().trim();
-            if (url.length() < 1) {
-                String itemText = item.html();
-                int linkTagPos = itemText.indexOf(TAG_LINK);
-                int linkEndPos = itemText.indexOf('<', linkTagPos + 1);
-                if (linkTagPos >= 0 && linkEndPos >= 0)
-                    url = removeNewLineTail(itemText.substring(linkTagPos
-                            + TAG_LINK.length(), linkEndPos));
-            }
-            data.url = url.trim();
-        } catch (Exception e) {
-            return;
+        String url = item.getElementsByTag("link").first().text().trim();
+        if (url.length() < 1) {
+            String itemText = item.html();
+            int linkTagPos = itemText.indexOf(TAG_LINK);
+            int linkEndPos = itemText.indexOf('<', linkTagPos + 1);
+            if (linkTagPos >= 0 && linkEndPos >= 0)
+                url = removeNewLineTail(itemText.substring(linkTagPos
+                        + TAG_LINK.length(), linkEndPos));
         }
+        data.url = url.trim();
     }
 
     /*
