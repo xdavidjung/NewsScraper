@@ -8,3 +8,8 @@ back_up/*
 */.project
 */.swp
 */.cache
+*/logs/
+*.metadata
+*/google_data/
+*/yahoo_data/
+*/idCount
