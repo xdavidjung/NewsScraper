@@ -264,7 +264,7 @@ public abstract class RssScraper {
      * name of the daily directory.
      * @require dateString is set.
      */
-    private String makeDailyDirectory(String rootDataFolder) {
+    protected String makeDailyDirectory(String rootDataFolder) {
 
         // make sure that the root directory exists. if not, create it.
         File folder = new File(rootDataFolder);
