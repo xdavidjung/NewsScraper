@@ -81,6 +81,8 @@
         <directory>${basedir}/src/main/java/edu/washington/cs/knowitall/newsscraper</directory>
         <includes>
           <include>YahooRssConfig</include>
+          <include>GoogleRssConfig</include>
+	  <include>GooglePublishers.csv</include>
         </includes>
         <excludes></excludes>
       </resource>

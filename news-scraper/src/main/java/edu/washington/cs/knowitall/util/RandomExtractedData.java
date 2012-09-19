@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.Iterator;
 import java.util.Random;
 
 import org.json.JSONArray;
@@ -15,13 +14,13 @@ import org.json.JSONObject;
 public class RandomExtractedData {
 
     private static JSONObject result;
-    
+
     public static void main(String[] args) {
         result = new JSONObject();
         get();
         put();
     }
-    
+
 
     private static void put() {
         File outputFile = new File("./n-nary_keypoints.txt");

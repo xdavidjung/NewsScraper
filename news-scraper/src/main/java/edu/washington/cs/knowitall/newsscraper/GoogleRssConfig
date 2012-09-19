@@ -1,0 +1,16 @@
+{
+"root-dir":"google_data/",
+"rss-url":"http://news.google.com/news?output=rss&hl=en",
+"categories":["us", "uk", "au", "ca"],
+"rss-list":{
+	"us":["w", "n", "h", "s", "m", "b", "tc", "e", "snc", "p"], 
+	"uk":["n", "h", "s", "m", "b", "tc", "e", "snc", "p"],
+	"au":["n", "h", "s", "m", "b", "tc", "e", "snc", "p"],
+	"ca":["n", "h", "s", "m", "b", "tc", "e", "snc", "p"]
+},
+"sentence-minimum-length":15,
+"extracted_data_suffix":"revnews",
+"extracted_data_dir":"extracted_data",
+"extracted_readable_data":"extracted_readable_data",
+"formatted_extracted_data_dir":"formatted/"
+}
