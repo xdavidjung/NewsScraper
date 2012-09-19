@@ -1,16 +1,16 @@
 {
-"folder-name":"yahoo_data/",
+"root-dir":"yahoo_data/",
 "rss-url":"http://news.yahoo.com/rss/",
-"category":["US", "BUSINESS", "WORLD", "ENTERTAINMENT", "SPORTS", "TECH", "POLITICS", "SCIENCE", "HEALTH"],
+"categories":["US", "BUSINESS", "WORLD", "ENTERTAINMENT", "SPORTS", "TECH", "POLITICS", "SCIENCE", "HEALTH"],
 "rss-list":{
-	"US":["us", "education", "religion", "crime-trials", "contributor-network"], 
+	"US":["us", "education", "religion", "crime-trials"], 
 	"BUSINESS":["business", "economy", "stock-markets", "earnings", "personal-finance", "business-press-releases", "taxes", "marketplace"],
 	"WORLD":["world", "middle-east", "europe", "latin-america", "africa", "asia", "canada", "australia-antarctica"],
 	"ENTERTAINMENT":["entertainment", "celebrity", "tv", "movies", "music", "reviews", "fashion", "books", "arts", "odd"],
 	"SPORTS":["sports", "football", "baseball", "basketball", "college-sports", "soccer", "cycling", "hockey", "tennis", "golf", "world-cup"],
-	"TECH":["tech", "internet", "gadgets", "wireless", "apple-macintosh", "social-media", "security", "open-source", "gaming"],
-	"POLITICS":["politics", "white-house", "congress", "us-government", "the-courts", "opinion", "politics-press-releases", "elections-2012"],
-	"SCIENCE":["science", "weather", "astronomy", "animal-pets", "dinosaurs-fossils", "biotech", "energy", "green"],
+	"TECH":["tech", "internet", "gadgets", "wireless", "apple", "social-media", "security", "open-source", "gaming"],
+	"POLITICS":["politics", "white-house", "congress", "us-government", "the-courts", "politics-press-releases", "elections"],
+	"SCIENCE":["science", "weather", "astronomy", "animal-pets", "biotech", "energy", "green"],
 	"HEALTH":["health", "sexual-health", "medications-drugs", "parenting-kids", "seniors-aging", "diseases-conditions", "vitality"]
 },
 "sentence-minimum-length":15,

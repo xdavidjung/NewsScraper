@@ -6,9 +6,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * 
+ *
  * @author Pingyang He
- * 
+ *
  */
 public class NewsData {
     public String title;
@@ -37,7 +37,7 @@ public class NewsData {
     }
 
     /**
-     * 
+     *
      * @return a JSONObject contains all the fields of this class
      */
     public JSONObject toJSONObject() {
@@ -62,7 +62,7 @@ public class NewsData {
 
     /**
      * returns this object as json string
-     * 
+     *
      * @return the json string that represents this object
      */
     public String toJsonString() {
@@ -78,7 +78,7 @@ public class NewsData {
         StringBuilder sb = new StringBuilder();
         Field[] fields = this.getClass().getFields();
         String seperator = ", ";
-        
+
         for (Field field : fields) {
             String fieldName = field.getName();
             if (!fieldName.equals("extractions")) {

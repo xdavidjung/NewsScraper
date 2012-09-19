@@ -1,0 +1,47 @@
+7Online.com	([A-Z]+, [A-Z][a-z]+ (--|―+|—+|–+|‒+|‑+|‐+)( ))^
+9NEWS.com	(([A-Z]+ )+(--|―+|—+|–+|‒+|‑+|‐+)( ))^
+Baltimore Sun (blog)	.*The Baltimore Sun( )
+BBC News	.*(BBC News |BBC Nature )
+BBC Sport	.*BBC Sport( )
+Canada NewsWire (press release)	.*/CNW/ -( )
+Carpages.ca (blog)	^(by .* on [A-Za-z]+ [0-9]+, [0-9]{2,4} · [0-9]+ comments( ))
+CBS News	.*(\(CBS News\) |\(CBS\/AP\) )
+Complex.com (blog)	.*Permalink( )
+Computerworld	.*Computerworld -( )
+ESPN	.*ESPN.*\.com( )
+ESPN (blog)	.*ESPN.*\.com( )
+Examiner.com	.*
+Houston Chronicle (blog)	.*\| Print( )
+Jerusalem Post	.*JPOST\.COM STAFF( )
+MedPage Today	.*MedPage Today( )
+Newswise (press release)	Newswise —( )
+NHL.com	.*NHL.com( )
+Ottawa Sun	.*Ottawa Sun( )
+PCWorld	.*PCWorld( )
+PCWorld (blog)	.*PCWorld( )
+PerezHilton.com	.*
+Regina Leader-Post	.*(Leader-Post |Leader Post )
+Regina Leader-Post (blog)	.*(Leader-Post |Leader Post )
+Register	.*Get more from this author( )
+Sky News Australia	.*Updated: [0-9]{2}:[0-9]{2}, [A-Z][a-z]+( )
+SmartHouse	^By.*\| .* \| [0-9]{1,2}/[0-9]{1,2}/20[0-9]{2}( )
+StyleBistro	.*
+Sydney Morning Herald	^(AAP |PAA |[A-Z]+: )
+Techworld.com	.*\| Published:( )
+telecomlead.com	Telecom Lead [A-Z][a-z]+:( )
+Telegraph.co.uk	^•( )
+Telegraph.co.uk (blog)	.*Last updated:( )
+The Associated Press	.*AP – [0-9]{1,2} minute(s)? ago( )
+The Daily meal	.*, (Junior Writer|Editor|Special Contributor|Writer)( )
+TheImproper.com	.*By TheImproper,( )
+TheTyee.ca (blog)	.*(pm|am) [0-9]{1,4} comments( )
+The Verge	.*[0-9]{1,4}Comment(s)?( )
+TIME	.* \+( )
+Today.com (blog)	Hey, stargazer. Don't hide your hunger for the latest in pop culture, TV, movies, music and celebrities, on the show and beyond. Follow us on Twitter and Facebook, too.( )
+USA TODAY	.*USA TODAY( )
+USA TODAY (blog)	.*USA TODAY( )
+Victoria Times Colonist	.*Times Colonist( )
+WebProNews	.*Leave a Comment( )
+Yahoo! Canada Sports (blog)	.* – ([0-9]{1,2} hour(s)? )?([0-9]{1,2} minute(s)? )?([0-9]{1,2} second(s)? )?(ago )?
+Yahoo! Sports	.* – ([0-9]{1,2} hour(s)? )?([0-9]{1,2} minute(s)? )?([0-9]{1,2} second(s)? )?(ago )?
+Yahoo! Sports (blog)	.* – ([0-9]{1,2} hour(s)? )?([0-9]{1,2} minute(s)? )?([0-9]{1,2} second(s)? )?(ago )?

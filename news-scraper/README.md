@@ -13,41 +13,37 @@ Files in the util package are undocumented and their uses are unknown.
 
 usage: options:
 
-    -fc <arg>   This option cannot be used without the fmt option.
-                Specify the category name; if not specified, all categories
-                will be used.
-
-    -fct <arg>  This option cannot be used without the fmt option.
-                Specify a minimum confidence requirement; if not specified,
-                then a default number of extractions will be taken.
-
-    -fd <arg>   This option cannot be used without the fmt option.
-                Specify the directory of source files and a target directory; if
-                not specified, then a default will be used.
-
-    -fmt        Format the reverb news database into a human readable file.
-
-    -ft <arg>   This option cannot be used without the fmt option.
-                Specify a time interval. The files that fall into this
-                interval will be formatted (for eg: 2012-05-01 2012-05-04); 
-                if not specified, then a default interval will be formatted.
-
-    -ftoday     Format today's file; this can not be used with the ft option.
-
-    -h          Print program usage.
-
-    -p <arg>    Process RSS only: the first arg is the source directory, the
-                second arg is the target directory where data will be saved.
-
-    -r          Use reverb to extract today's file.
-
-    -rd <arg>   Use reverb to extract files in the first arg and save it
-                into second arg directory.
-
-    -s          Fetch the RSS (without processing it)
-
-    -sp         Fetch the RSS and process it.
-
+     -fc <arg>    This option cannot be used without the fmt option. Specify
+                  the category name. If not specified, all categories will be
+                  used.
+     -fct <arg>   This option cannot be used without the fmt option. Specify a
+                  minimum confidence requirement. If not specified, then a
+                  default number of extractions will be taken.
+     -fd <arg>    This option cannot be used without the fmt option. Specify
+                  the directory of source files and a target file; if not
+                  specified, then a default will be used.
+     -fmt         Format the reverb news database into a human readable file.
+     -ft <arg>    This option cannot be used without the fmt option. Specify
+                  the time interval. The files that fall into this interval
+                  will be formatted (e.g., 2012-05-01 2012-05-04). If not
+                  specified, then a default interval will be formatted.
+     -ftoday      Format today's file. This can not be used with the ft
+                  option.
+     -g           Opt to use the Google configuration file and scrape the
+                  Google RSS feed. Exactly one of either -g or -y must be
+                  specified.
+     -h           print program usage
+     -p <arg>     Process RSS only: the first arg is the source directory with
+                  the raw data, the second arg is the target directory where
+                  processed data will be saved.
+     -r           Use reverb to extract today's file.
+     -rd <arg>    Use reverb to extract files in the first arg and save it
+                  into second arg directory.
+     -s           Fetch the RSS (without processing it).
+     -sp          Fetch RSS and process it.
+     -y           Opt to use the Yahoo! configuration file and scrape the
+                  Yahoo! RSS feed. Exactly one of either -g or -y must be
+                  specified.
 
 ## Extraction Categories:
 
