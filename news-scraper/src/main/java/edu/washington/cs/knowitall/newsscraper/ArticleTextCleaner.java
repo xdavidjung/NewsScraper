@@ -58,7 +58,7 @@ public class ArticleTextCleaner {
         if (descText.equals("")) return "";
 
         if (!publishers.containsKey(publisher)) {
-            logger.info("Publisher not found: " + publisher);
+            // logger.info("Publisher not found: " + publisher);
             return fixGeneralContent(descText);
         }
         Pattern p = Pattern.compile(publishers.get(publisher));
@@ -68,7 +68,7 @@ public class ArticleTextCleaner {
         if (found) {
             return clean(descText.replaceFirst(publishers.get(publisher), ""), publisher, false);
         } else if (first) {
-            logger.info("Pattern not found for publisher: " + publisher + " for text: " + descText + ".");
+            // logger.info("Pattern not found for publisher: " + publisher + " for text: " + descText + ".");
         }
 
         return fixGeneralContent(descText);
