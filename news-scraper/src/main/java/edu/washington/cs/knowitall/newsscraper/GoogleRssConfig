@@ -12,5 +12,6 @@
 "extracted_data_suffix":"revnews",
 "extracted_data_dir":"extracted_data",
 "extracted_readable_data":"extracted_readable_data",
-"formatted_extracted_data_dir":"formatted/"
+"formatted_extracted_data_dir":"formatted/",
+"tag":"google"
 }
