@@ -37,6 +37,7 @@ public class Config {
     private static final String EXTRACTED_DATA_SUFFIX = "extracted_data_suffix";
     private static final String EXTRACTED_DIR = "extracted_data_dir";
     private static final String FORMATTED_EXTRACTED_DATA = "formatted_extracted_data_dir";
+    private static final String TAG = "tag";
 
     /** Holds all the information in the JSON config file. */
     private JsonObject configJson;
@@ -54,6 +55,9 @@ public class Config {
 
     /** The directory to place extracted data. */
     private String extractedDataDir;
+
+    /** the tag to use for this configuration. */
+    private String tag;
 
     /** The directory to place formatted extracted data. */
     private String formattedExtractedDataDir;
@@ -97,6 +101,8 @@ public class Config {
         extractedDataSuffix = configJson.get(EXTRACTED_DATA_SUFFIX).getAsString();
         extractedDataDir = configJson.get(EXTRACTED_DIR).getAsString();
         formattedExtractedDataDir = configJson.get(FORMATTED_EXTRACTED_DATA).getAsString();
+        tag = configJson.get(TAG).getAsString();
+
         generateCategoryList();
     }
 
@@ -170,6 +176,11 @@ public class Config {
     /** @return where the formatted data will be stored */
     public String getFormattedExtractedDataDir() {
         return formattedExtractedDataDir;
+    }
+
+    /** @return the config's tag */
+    public String getTag() {
+        return tag;
     }
 
     /* read the given file into memory as a string */
