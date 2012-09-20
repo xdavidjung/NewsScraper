@@ -42,6 +42,7 @@ public class ReverbNewsExtractor {
     private String rootDir;
     private String extractedDataSuffix;
     private String extractedDataDir;
+    private String tag;
     private Calendar calendar;
     private Map<Long, ExtractedNewsData> data;
     private OpenNlpSentenceChunker chunker;
@@ -160,7 +161,7 @@ public class ReverbNewsExtractor {
         targetFolder.mkdirs();
         if (!targetFolder.exists())
             logger.error("outputData(): can't create folder.");
-        String jsonDataDir = targetDir + dateString + "_ExtractedData."
+        String jsonDataDir = targetDir + dateString + "_" + tag + "_ExtractedData."
                 + extractedDataSuffix;
         // String readableDataDir = targetDir + dateString + "_readable.txt";
         logger.info("outputData(): storing in {}", targetDir);
@@ -266,6 +267,7 @@ public class ReverbNewsExtractor {
         dateString = config.getDateFormat().format(calendar.getTime());
         extractedDataSuffix = config.getExtractedDataSuffix();
         extractedDataDir = config.getExtractedDataDir();
+        tag = config.getTag();
     }
 
 }
