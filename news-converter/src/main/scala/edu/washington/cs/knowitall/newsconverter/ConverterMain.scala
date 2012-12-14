@@ -3,6 +3,7 @@ package edu.washington.cs.knowitall.newsconverter;
 import edu.washington.cs.knowitall.browser.extraction.ReVerbExtraction
 import edu.washington.cs.knowitall.collection.immutable.Interval
 import edu.washington.cs.knowitall.tool.chunk.ChunkedToken
+import edu.washington.cs.knowitall.tool.tokenize.OpenNlpTokenizer
 
 import net.liftweb.json._
 
@@ -11,6 +12,9 @@ import scala.io.Source
 import java.io.File
 
 object ConverterMain {
+  
+  val tokenizerLocal = new java.lang.ThreadLocal[OpenNlpTokenizer]() { override def initialValue = new OpenNlpTokenizer }
+  def tokenizer = tokenizerLocal.get
   
   def main(args: Array[String]): Unit = {
     
@@ -21,7 +25,7 @@ object ConverterMain {
                       else getJson
       
       // for each news data, look at the extractions
-      newsDatum.foreach(newsData => {
+      val extrs = newsDatum.foreach(newsData => {
         val extractions = newsData.extractions
         val url = newsData.url
         
@@ -29,7 +33,7 @@ object ConverterMain {
         extractions.foreach(ext => {
           val chunkTags = ext.chunkTags.split(" ").iterator
           val posTags = ext.posTags.split(" ").iterator
-          val sent = ext.sent.split(" ")
+          val sent = tokenizer.tokenize(ext.sent).map(_.string)
           val sentIterator = sent.iterator
           val offsets = ext.offsets.split("\\) \\[").map(getOffset).iterator
           
@@ -49,7 +53,7 @@ object ConverterMain {
             getInterval(ext.rRel),
             getInterval(ext.rArg2),
             url)
-          println(ReVerbExtraction.toTabDelimited(re))
+          println(ReVerbExtraction.serializeToString(re))
         })
       })
     } getOrElse {
@@ -134,7 +138,7 @@ object ConverterMain {
     * The input must be the lines of a json file in the appropriate format.
     */
   def getJson: List[NewsData] = {
-    val source = Source.stdin
+    val source = Source.fromInputStream(System.in, "UTF-8")
     val jsonString = source.getLines.mkString
     
     source.close()
@@ -149,7 +153,7 @@ object ConverterMain {
    * The lines from stdin must form a json file in the appropriate format. 
    */
   def readJson(file: File): List[NewsData] = {
-    val source = Source.fromFile(file)
+    val source = Source.fromFile(file, "UTF-8")
     val jsonString = source.getLines.mkString
     source.close()
     
