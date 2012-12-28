@@ -114,27 +114,32 @@ public abstract class RssScraper {
         for (String categoryName: categories) {
             List<String> feeds = rssCategoryToFeeds.get(categoryName);
             for (String feedName: feeds) {
-                try {
-                    String url = constructUrl(categoryName, feedName);
-                    Document doc = Jsoup.connect(url).get();
+                // try three times before we log an error
+                for (int i = 0; i < 3; i++) {
+                    try {
+                        String url = constructUrl(categoryName, feedName);
+                        Document doc = Jsoup.connect(url).get();
 
-                    // write fetched xml to local data
-                    BufferedWriter out = new BufferedWriter(
-                            new OutputStreamWriter(new FileOutputStream(
-                                    new File(rawDataDir + dateString + "_"
-                                            + categoryName + "_" + feedName
-                                            + ".html"), true), ENCODE));
-                    out.write(doc.toString());
-                    out.close();
+                        // write fetched xml to local data
+                        BufferedWriter out = new BufferedWriter(
+                                new OutputStreamWriter(new FileOutputStream(
+                                new File(rawDataDir + dateString + "_"
+                                + categoryName + "_" + feedName
+                                + ".html"), true), ENCODE));
+                        out.write(doc.toString());
+                        out.close();
 
-                    logger.info(
-                            "fetchData(): " + "Fetched {}: {} successfully",
+                        logger.info(
+                                "fetchData(): " + "Fetched {}: {} successfully",
+                                categoryName, feedName);
+                        break;  // stop trying on success
+
+                    } catch (IOException e) {
+                        if (i < 2) continue;  // try again!
+                        logger.error("fetchData(): Failed to download: {}_{}",
                             categoryName, feedName);
-
-                } catch (IOException e) {
-                    logger.error("fetchData(): " + "Failed to download: {}_{}",
-                            categoryName, feedName);
-                    e.printStackTrace();
+                        e.printStackTrace();
+                    }
                 }
             }
         }

@@ -73,36 +73,46 @@ public class GoogleRssScraper extends RssScraper {
         for (String categoryName: categories) {
             List<String> feeds = rssCategoryToFeeds.get(categoryName);
             for (String feedName: feeds) {
-                try {
-                    String parentUrl = constructUrl(categoryName, feedName);
-                    // parentDoc is the rss feed for the larger topic
-                    Document parentDoc = Jsoup.connect(parentUrl).get();
+                // want to try a total of 3 times
+                for (int i = 0; i < 3; i++) {
+                    try {
+                        String parentUrl = constructUrl(categoryName,
+                                                        feedName);
+                        // parentDoc is the rss feed for the larger topic
+                        Document parentDoc = Jsoup.connect(parentUrl).get();
 
-                    // write fetched xml to local data: .../rawdata/DATE_CATEGORY_FEED.html
-                    BufferedWriter out =
-                        new BufferedWriter(
-                        new OutputStreamWriter(
-                        new FileOutputStream(
-                        new File(rawDataDir + dateString + "_" + categoryName + "_" + feedName + ".html"), true), ENCODE));
-                    out.write(parentDoc.toString());
+                        // write fetched xml to local data:
+                        // .../rawdata/DATE_CATEGORY_FEED.html
+                        BufferedWriter out =
+                            new BufferedWriter(
+                            new OutputStreamWriter(
+                            new FileOutputStream(
+                            new File(rawDataDir + dateString + "_" +
+                                categoryName + "_" + feedName + ".html"),
+                                true), ENCODE));
+                        out.write(parentDoc.toString());
 
-                    for (Element article: parentDoc.getElementsByTag("item")) {
-                        String relatedUrl = getRelatedArticleUrl(article);
-                        if (relatedUrl == null) continue;
+                        for (Element art: parentDoc.getElementsByTag("item")) {
+                            String relatedUrl = getRelatedArticleUrl(art);
+                            if (relatedUrl == null) continue;
 
-                        Document articleDoc = Jsoup.connect(relatedUrl).get();
-                        out.write(articleDoc.toString());
-                    }
+                            Document artDoc = Jsoup.connect(relatedUrl).get();
+                            out.write(artDoc.toString());
+                        }
 
-                    out.close();
-                    logger.info(
+                        out.close();
+                        logger.info(
                             "fetchData(): " + "Fetched {}: {} successfully",
                             categoryName, feedName);
+                        break;
 
-                } catch (IOException e) {
-                    logger.error("fetchData(): " + "Failed to download: {}_{}",
+                    } catch (IOException e) {
+                        if (i < 2) continue;
+                        // otherwise this is the third failed try: log error
+                        logger.error("fetchData(): Failed to download: {}_{}",
                             categoryName, feedName);
-                    e.printStackTrace();
+                        e.printStackTrace();
+                    }
                 }
             }
         }
