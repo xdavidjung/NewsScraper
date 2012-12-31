@@ -86,16 +86,19 @@ public class ReverbNewsExtractor {
 
         logger.info("Constructor: Preparing to extract news data.");
 
+        // figure out where to extract from/to
         String location = null;
         if (srcDir == null && targetDir == null) {
             // extract from the default location
             location = rootDir + dateString + "/data/";
         } else if (srcDir != null && targetDir != null) {
+            // user-specified
             location = srcDir;
         } else {
             logger.error("extract(): bad directories.");
         }
 
+        // deal with the posterior slash
         if (!location.endsWith("/"))
             location += "/";
 
@@ -120,7 +123,6 @@ public class ReverbNewsExtractor {
             }
             data.clear();
         }
-
         logger.info("Extraction finished.");
     }
 
@@ -150,7 +152,7 @@ public class ReverbNewsExtractor {
     }
 
     /*
-     *
+     * output extracted data into the specified directory. 
      */
     private void outputData(String targetDir) {
         logger.info("outputData(): Starting to output data.");
@@ -269,5 +271,4 @@ public class ReverbNewsExtractor {
         extractedDataDir = config.getExtractedDataDir();
         tag = config.getTag();
     }
-
 }
