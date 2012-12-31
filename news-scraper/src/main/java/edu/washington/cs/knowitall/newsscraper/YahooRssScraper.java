@@ -71,6 +71,8 @@ public class YahooRssScraper extends RssScraper {
 
         for (String fileName : files) {
             logger.info("processHtml(): Process {}", fileName);
+
+            // process the file name
             int timeSeperatorPos = fileName.indexOf('_');
             int catSeperatorPos = fileName.indexOf('_', timeSeperatorPos + 1);
 
@@ -84,7 +86,7 @@ public class YahooRssScraper extends RssScraper {
 
             Document wholeHtml = Jsoup.parse(fileContent);
 
-            // each item contains a news
+            // each item contains a news article
             Elements items = wholeHtml.getElementsByTag("item");
             for (Element item : items) {
                 try {
@@ -264,26 +266,25 @@ public class YahooRssScraper extends RssScraper {
         if (paraText.endsWith(USELESS_CONTENT_INDICATOR))
             return null;
 
-        // get rid of the leading publisher info
-        int pubSep = paraText.indexOf(REUTERS_KEYWORD);
-        if (pubSep >= 0)
-            paraText = paraText.substring(pubSep + REUTERS_KEYWORD.length());
+        // get rid of reuters keyword
+        paraText.replace(REUTERS_KEYWORD, "");
 
-        int HealthyDayPos = paraText.indexOf(HEALTHYDAY_KEYWORD);
-        if (HealthyDayPos >= 0)
-            paraText = paraText.substring(HealthyDayPos
-                    + HEALTHYDAY_KEYWORD.length());
+        // get rid of healthy day keyword
+        paraText.replace(HEALTHYDAY_KEYWORD, "");
 
+        // get rid of any accidental double backslashes followed by a quote
+        paraText.replace("\\\\\"", "\\\"");
+
+        // get rid of the "..." at the end of the content
         if (paraText.endsWith(GARBAGE_TAIL)) {
-            // get rid of the "..." at the end of the content
             paraText = paraText.substring(0, paraText.length() - 3).trim();
             for (int i = 0; i < ENDING_PUNCTUATION.length; i++) {
                 if (paraText.endsWith(ENDING_PUNCTUATION[i]))
                     return paraText;
             }
-        } else
+        } else {
             return paraText;
-
+        }
         return null;
     }
 }
