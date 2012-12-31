@@ -26,20 +26,13 @@ public class GoogleRssScraper extends RssScraper {
     private final String RSS_PARAM = "&output=rss";
     private final ArticleTextCleaner cleaner;
 
-    // remove the following:
-    // private final List<String> publisherNames;
-    // private final Map<String, Integer> publisherCount;
-    // private final Map<String, List<String>> publisherTexts;
-
     public GoogleRssScraper(Calendar cal, Config con) {
         super(cal, con);
 
         cleaner = new ArticleTextCleaner();
-        // publisherNames = new ArrayList<String>();
-        // publisherCount = new HashMap<String, Integer>();
-        // publisherTexts = new HashMap<String, List<String>>();
     }
 
+    // constructs google-specific urls given the correct category and feed
     public String constructUrl(String category, String feed) {
         return baseUrl + "&ned=" + category + "&topic=" + feed;
     }
@@ -106,7 +99,8 @@ public class GoogleRssScraper extends RssScraper {
                             categoryName, feedName);
                         break;
 
-                    } catch (IOException e) {
+                    // same catch logic for IOException and SocketTimeoutEx.
+                    } catch (Exception e) {
                         if (i < 2) continue;
                         // otherwise this is the third failed try: log error
                         logger.error("fetchData(): Failed to download: {}_{}",
@@ -180,12 +174,6 @@ public class GoogleRssScraper extends RssScraper {
                 String publisher = lh.getElementsByTag("font").get(1).text();
                 String url = lh.getElementsByTag("a").first().absUrl("href");
 
-                // if (!publisherNames.contains(publisher)) publisherNames.add(publisher);
-                // if (!publisherCount.containsKey(publisher)) publisherCount.put(publisher, 0);
-                // publisherCount.put(publisher, publisherCount.get(publisher) + 1);
-                // if (!publisherTexts.containsKey(publisher)) publisherTexts.put(publisher, new ArrayList<String>());
-                // publisherTexts.get(publisher).add(descText);
-
                 data.source = publisher;
                 data.url = url;
 
@@ -258,5 +246,4 @@ public class GoogleRssScraper extends RssScraper {
         String url = lastLink.getElementsByTag("a").first().absUrl("href");
         return url + RSS_PARAM;
     }
-
 }

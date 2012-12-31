@@ -51,6 +51,9 @@ public class ArticleTextCleaner {
             descText = descText.substring(endOfFirstSentence + 2, descText.length());
         }
 
+        // check for double-backslash problems:
+        descText.replace("\\\\\"", "\\\"");
+
         return descText;
     }
 
