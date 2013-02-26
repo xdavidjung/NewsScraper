@@ -52,7 +52,8 @@ public class ArticleTextCleaner {
         }
 
         // check for double-backslash problems:
-        descText.replace("\\\\\"", "\\\"");
+        descText = descText.replace("\\", "");
+
 
         return descText;
     }
@@ -84,6 +85,8 @@ public class ArticleTextCleaner {
         if (descText.equals("")) return "";
 
         String original = descText;
+
+        descText = descText.replace("\\\\", "\\");
 
         if (descText.endsWith(GARBAGE_TAIL)) {
             int endOfLastSentence = Math.max(descText.lastIndexOf(". "),
